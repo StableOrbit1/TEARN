@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognitive Blueprint: Learning Style Assessment & Translator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom Styles and Animations */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom progress bar transition */
+        .progress-transition {
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* Hide elements utility */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Style for the translated content area to look slightly distinct */
+        .translated-content {
+            background-color: #fdfdfd;
+            border-left: 4px solid #3b82f6; /* Default blue, will be dynamically colored */
+        }
+
+        .age-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .age-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #6366f1; /* Indigo-500 */
+        }
+        .age-card.selected {
+            border-color: #4f46e5; /* Indigo-600 */
+            background-color: #e0e7ff; /* Indigo-50 */
+            ring: 2px solid #4f46e5;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md z-10 sticky top-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-brain text-indigo-600 text-2xl mr-2"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-800">Cognitive Blueprint</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="nav-assessment" class="text-gray-600 hover:text-indigo-600 font-medium px-3 py-2 rounded-md transition-colors" onclick="switchTab('assessment')">Assessment</button>
+                    <button id="nav-translator" class="text-gray-600 hover:text-indigo-600 font-medium px-3 py-2 rounded-md transition-colors hidden" onclick="switchTab('translator')">Translator</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col items-center justify-start p-4 sm:p-8 w-full max-w-5xl mx-auto">
+
+        <!-- ================= ASSESSMENT VIEW ================= -->
+        <section id="view-assessment" class="w-full w-full slide-up">
+            
+            <!-- Landing Screen -->
+            <div id="landing-screen" class="bg-white rounded-2xl shadow-xl p-8 sm:p-12 text-center max-w-4xl mx-auto mt-10">
+                <div class="inline-block p-4 rounded-full bg-indigo-50 mb-6">
+                    <i class="fas fa-microscope text-5xl text-indigo-600"></i>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Discover Your Deep Learning Profile</h1>
+                <p class="text-gray-600 text-lg mb-8 leading-relaxed max-w-2xl mx-auto">
+                    Moving beyond simple quizzes, this assessment uses a multi-faceted battery of tests designed around the VARK model. 
+                    We evaluate your preferences across diverse scenarios to map your unique cognitive blueprint.
+                </p>
+
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">First, select your age group:</h2>
+                    <p class="text-sm text-gray-500 mb-6">This helps us tailor the scenarios to be more relevant to your daily experiences.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
+                        <button onclick="selectAgeGroup('youth', this)" class="age-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer group focus:outline-none">
+                            <i class="fas fa-user-graduate text-3xl text-gray-400 group-hover:text-indigo-500 mb-3 transition-colors"></i>
+                            <h3 class="text-lg font-bold text-gray-800">10 - 18 yrs</h3>
+                            <p class="text-sm text-gray-500 mt-2">School, hobbies, and learning new skills.</p>
+                        </button>
+                        
+                        <button onclick="selectAgeGroup('adult', this)" class="age-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer group focus:outline-none">
+                            <i class="fas fa-user-tie text-3xl text-gray-400 group-hover:text-indigo-500 mb-3 transition-colors"></i>
+                            <h3 class="text-lg font-bold text-gray-800">18 - 45 yrs</h3>
+                            <p class="text-sm text-gray-500 mt-2">Career, higher education, and daily life.</p>
+                        </button>
+                        
+                        <button onclick="selectAgeGroup('senior', this)" class="age-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer group focus:outline-none">
+                            <i class="fas fa-user-clock text-3xl text-gray-400 group-hover:text-indigo-500 mb-3 transition-colors"></i>
+                            <h3 class="text-lg font-bold text-gray-800">45+ yrs</h3>
+                            <p class="text-sm text-gray-500 mt-2">Professional experience, hobbies, and managing tasks.</p>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="start-btn" onclick="startAssessment()" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-4">
+                    Begin Comprehensive Assessment
+                </button>
+                
+                <div class="mt-10 pt-6 border-t border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500">
+                    <div class="flex flex-col items-center"><i class="far fa-eye mb-2 text-xl"></i> Visual</div>
+                    <div class="flex flex-col items-center"><i class="fas fa-headphones-alt mb-2 text-xl"></i> Aural</div>
+                    <div class="flex flex-col items-center"><i class="fas fa-book-open mb-2 text-xl"></i> Read/Write</div>
+                    <div class="flex flex-col items-center"><i class="fas fa-running mb-2 text-xl"></i> Kinesthetic</div>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div id="quiz-container" class="hidden bg-white rounded-2xl shadow-xl p-6 sm:p-10 w-full max-w-3xl mx-auto mt-4">
+                
+                <!-- Progress Header -->
+                <div class="mb-8">
+                    <div class="flex justify-between text-sm font-medium text-gray-500 mb-2">
+                        <span id="test-phase-label">Phase 1: Situational Analysis</span>
+                        <span id="progress-text">Question 1 of 12</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full progress-transition" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Question Area -->
+                <div id="question-area" class="fade-in min-h-[300px]">
+                    <h2 id="question-text" class="text-2xl font-semibold text-gray-800 mb-6 leading-tight"></h2>
+                    <p id="question-scenario" class="text-gray-600 mb-6 italic hidden"></p>
+                    
+                    <div id="options-container" class="space-y-3">
+                        <!-- Options injected via JS -->
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-end">
+                    <button id="next-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed hidden" onclick="nextQuestion()">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="results-container" class="hidden bg-white rounded-2xl shadow-xl p-6 sm:p-10 w-full mt-4 fade-in">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Your Cognitive Blueprint</h2>
+                    <p class="text-gray-600">Based on your multi-phase assessment, here is your unique learning profile.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                    <!-- Chart/Bars Area -->
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">VARK Distribution</h3>
+                        <div id="results-bars" class="space-y-4">
+                            <!-- Bars injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Summary Area -->
+                    <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 flex flex-col justify-center">
+                        <h3 class="text-xl font-bold text-indigo-900 mb-3">Primary Style: <span id="primary-style-name" class="text-indigo-600"></span></h3>
+                        <p id="primary-style-desc" class="text-gray-700 leading-relaxed mb-4"></p>
+                        
+                        <h4 class="font-semibold text-gray-800 mb-2">Secondary Influence: <span id="secondary-style-name" class="font-normal text-gray-600"></span></h4>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-8">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Next Step: Apply Your Profile</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <p>Now that you know your profile, you can use the Translator tool to adapt any complex text into a format optimized for your brain.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center space-x-4">
+                    <button onclick="switchTab('translator')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
+                        Go to Content Translator <i class="fas fa-magic ml-2"></i>
+                    </button>
+                    <button onclick="resetAssessment()" class="bg-white hover:bg-gray-50 text-gray-600 font-medium py-3 px-6 rounded-lg border border-gray-300">
+                        Retake Assessment
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TRANSLATOR VIEW ================= -->
+        <section id="view-translator" class="w-full hidden slide-up mt-4">
+            <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-10 w-full">
+                <div class="flex items-center justify-between mb-6 border-b pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900"><i class="fas fa-exchange-alt text-indigo-500 mr-2"></i> Content Translator</h2>
+                        <p class="text-sm text-gray-500 mt-1">Adapting text for your <span id="translator-profile-badge" class="font-semibold px-2 py-1 bg-indigo-100 text-indigo-800 rounded">Profile</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Input Area -->
+                    <div class="flex flex-col">
+                        <label for="source-text" class="block text-sm font-medium text-gray-700 mb-2">Source Material (Paste text here)</label>
+                        <textarea id="source-text" rows="12" class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none font-mono text-sm" placeholder="Paste an article, textbook excerpt, or technical documentation here..."></textarea>
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="text-xs text-gray-400">Simulation: Translation happens locally.</span>
+                            <button onclick="translateContent()" id="translate-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg shadow transition-colors flex items-center">
+                                Translate <i class="fas fa-cog ml-2" id="translate-spinner" style="display:none;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output Area -->
+                    <div class="flex flex-col h-full">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Optimized Content</label>
+                        <div id="translated-output" class="translated-content flex-grow w-full p-6 border border-gray-200 rounded-lg shadow-inner overflow-y-auto min-h-[300px] max-h-[500px]">
+                            <div class="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
+                                <i class="fas fa-file-alt text-4xl"></i>
+                                <p>Your translated content will appear here.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                             <button onclick="copyTranslatedText()" id="copy-btn" class="text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1 rounded hidden border border-indigo-200 hover:bg-indigo-50">
+                                <i class="far fa-copy mr-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        //        // --- Data & State ---
+
+        // The Assessment is divided into 'phases' to act as a battery rather than just one quiz type.
+        // V: Visual, A: Aural, R: Read/Write, K: Kinesthetic
+        
+        // Define batteries based on age groups
+        const assessmentBatteries = {
+            'youth': [ // 10-18 yrs
+                {
+                    phase: "Situational Judgment",
+                    questions: [
+                        {
+                            text: "You just got a new, complicated board game to play with friends.",
+                            scenario: "You open the box and see lots of pieces, cards, and a rulebook.",
+                            options: [
+                                { text: "I look at the diagrams and pictures in the rulebook to see how the board should be set up.", category: "V" },
+                                { text: "I search for a 'How to Play' video on YouTube and listen to someone explain it.", category: "A" },
+                                { text: "I read through the rulebook step-by-step before we do anything else.", category: "R" },
+                                { text: "I start taking pieces out, setting them on the board, and try to figure it out by playing a practice round.", category: "K" }
+                            ]
+                        },
+                        {
+                            text: "You are doing a group project for school about a historical event.",
+                            scenario: "You need to decide how to present the information to the class.",
+                            options: [
+                                { text: "I want to create a detailed report or write an essay covering all the facts.", category: "R" },
+                                { text: "I suggest we make a poster with a timeline, maps, and pictures.", category: "V" },
+                                { text: "I think we should do a presentation where we mostly talk and maybe hold a class discussion.", category: "A" },
+                                { text: "I want to build a model or act out a short skit about the event.", category: "K" }
+                            ]
+                        },
+                        {
+                            text: "You are learning a new move in a sport or a new dance routine.",
+                            options: [
+                                { text: "I listen closely to the coach or teacher explaining the timing and steps.", category: "A" },
+                                { text: "I need to just try it myself, moving my body to get the feel for it.", category: "K" },
+                                { text: "I read the description of the move in a book or online article.", category: "R" },
+                                { text: "I watch the coach demonstrate it or look at pictures showing the correct positions.", category: "V" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    phase: "Information Processing",
+                    questions: [
+                        {
+                            text: "Think back to a really good class you had recently. What do you remember most?",
+                            options: [
+                                { text: "The interesting stories the teacher told or discussions we had.", category: "A" },
+                                { text: "An experiment we did or a game we played in class.", category: "K" },
+                                { text: "The diagrams drawn on the board or the slides that were shown.", category: "V" },
+                                { text: "The detailed notes I took or the handout we read.", category: "R" }
+                            ]
+                        },
+                        {
+                            text: "When you have to memorize vocabulary words for a test, you usually...",
+                            options: [
+                                { text: "Visualize the word in your mind or draw a picture next to it.", category: "V" },
+                                { text: "Say the words and definitions out loud over and over.", category: "A" },
+                                { text: "Write the words out multiple times on flashcards or paper.", category: "R" },
+                                { text: "Walk around the room while studying or use hand gestures to remember.", category: "K" }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            'adult': [ // 18-45 yrs (Original battery)
+                {
+                    phase: "Situational Judgment",
+                    questions: [
+                        {
+                            text: "You are setting up a complex new smart home system.",
+                            scenario: "You unbox the main hub and several sensors.",
+                            options: [
+                                { text: "I look at the diagrams in the quick-start guide to see how things connect.", category: "V" },
+                                { text: "I search for a YouTube video or ask a voice assistant for step-by-step instructions.", category: "A" },
+                                { text: "I read the detailed instruction manual cover to cover before starting.", category: "R" },
+                                { text: "I start plugging things in and pressing buttons to see what happens, figuring it out as I go.", category: "K" }
+                            ]
+                        },
+                        {
+                            text: "You are planning a vacation itinerary with a group of friends.",
+                            scenario: "Everyone needs to agree on the daily schedule.",
+                            options: [
+                                { text: "I prefer when someone creates a shared spreadsheet or detailed document with times and descriptions.", category: "R" },
+                                { text: "I want to look at a map of the city and see pictures of the locations to plan routes.", category: "V" },
+                                { text: "I'd rather we all get on a call or sit down together to talk through the options and decide.", category: "A" },
+                                { text: "I don't mind the plan, as long as we are active and doing things rather than just looking at things.", category: "K" }
+                            ]
+                        },
+                        {
+                            text: "You need to learn how to use a new software tool for work.",
+                            options: [
+                                { text: "I attend a training webinar where the instructor talks through the features.", category: "A" },
+                                { text: "I dive right into the software, clicking around and trying to complete a practice project.", category: "K" },
+                                { text: "I read through the official documentation and help articles.", category: "R" },
+                                { text: "I look for flowcharts or UI diagrams that explain the software architecture.", category: "V" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    phase: "Information Processing",
+                    questions: [
+                        {
+                            text: "Think back to a memorable presentation you attended recently. What sticks out most?",
+                            options: [
+                                { text: "The tone of the speaker's voice and the specific stories or analogies they told.", category: "A" },
+                                { text: "The interactive workshop element, or the feeling of being in that specific room.", category: "K" },
+                                { text: "The charts, graphs, or striking slides that were presented.", category: "V" },
+                                { text: "The specific facts, lists, or definitions that I wrote down in my notes.", category: "R" }
+                            ]
+                        },
+                        {
+                            text: "I am trying to find my way to a new restaurant.",
+                            options: [
+                                { text: "I prefer someone to give me written, turn-by-turn directions (e.g., 'Turn left on Main St.').", category: "R" },
+                                { text: "I rely on a drawn map or the GPS visualization on my phone.", category: "V" },
+                                { text: "I prefer to follow someone there, or I remember routes by landmarks I interact with.", category: "K" },
+                                { text: "I ask someone to verbally explain the route to me.", category: "A" }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            'senior': [ // 45+ yrs
+                {
+                    phase: "Situational Judgment",
+                    questions: [
+                        {
+                            text: "You are learning to use a new feature on your smartphone (e.g., setting up a digital wallet).",
+                            scenario: "The screen is showing several new options.",
+                            options: [
+                                { text: "I look for icons and visual cues on the screen to guide me.", category: "V" },
+                                { text: "I call a family member or ask a friend to talk me through it on the phone.", category: "A" },
+                                { text: "I read the on-screen text instructions or look up a help article online.", category: "R" },
+                                { text: "I just start tapping around to see what the different buttons do until I figure it out.", category: "K" }
+                            ]
+                        },
+                        {
+                            text: "You are planning a major home renovation or landscaping project.",
+                            scenario: "You need to convey your ideas to a contractor.",
+                            options: [
+                                { text: "I write down a detailed list of specifications and requirements.", category: "R" },
+                                { text: "I show them sketches, magazine clippings, or photos of what I want.", category: "V" },
+                                { text: "I prefer to have a long conversation, describing my vision to them verbally.", category: "A" },
+                                { text: "I walk them through the space, pointing at things and physically demonstrating changes.", category: "K" }
+                            ]
+                        },
+                        {
+                            text: "You receive a new appliance (like an advanced coffee maker or bread machine).",
+                            options: [
+                                { text: "I ask someone who owns one to explain how they use it.", category: "A" },
+                                { text: "I plug it in, push some buttons, and run a test cycle immediately.", category: "K" },
+                                { text: "I sit down and read the manual thoroughly before plugging it in.", category: "R" },
+                                { text: "I look at the diagrams showing the parts and how they fit together.", category: "V" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    phase: "Information Processing",
+                    questions: [
+                        {
+                            text: "When trying to recall a recipe you haven't made in a while, you rely on:",
+                            options: [
+                                { text: "Remembering the smell, taste, or the physical actions of chopping and stirring.", category: "K" },
+                                { text: "Visualizing what the finished dish or the ingredients looked like.", category: "V" },
+                                { text: "Remembering the conversation you had when someone first taught you the recipe.", category: "A" },
+                                { text: "Pulling out the recipe card or book to read the exact measurements.", category: "R" }
+                            ]
+                        },
+                        {
+                            text: "When managing your finances or planning a budget for the year:",
+                            options: [
+                                { text: "I prefer seeing charts, graphs, or visual breakdowns of my spending.", category: "V" },
+                                { text: "I talk it through with my partner or a financial advisor.", category: "A" },
+                                { text: "I rely on detailed spreadsheets, ledgers, or written lists of expenses.", category: "R" },
+                                { text: "I prefer to physically organize receipts and bills into folders or envelopes.", category: "K" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        let flattenedQuestions = [];
+        let currentQuestionIndex = 0;
+        let scores = { V: 0, A: 0, R: 0, K: 0 };
+        let userProfile = null;
+        let selectedAgeGroup = null;
+
+        const varkDetails = {
+            V: { name: "Visual", color: "blue", icon: "fa-eye", desc: "You learn best by seeing. Information presented in maps, spider diagrams, charts, graphs, flow charts, and symbolic arrows is most effective for you. You process structural relationships visually." },
+            A: { name: "Aural", color: "green", icon: "fa-headphones-alt", desc: "You learn best by listening and speaking. You prefer information that is spoken or heard. Discussions, lectures, podcasts, reading aloud, and talking through problems are highly effective for you." },
+            R: { name: "Read/Write", color: "purple", icon: "fa-book-open", desc: "You prefer information displayed as words. Text-based input and output—reading manuals, reports, essays, and writing lists or notes—is your strongest modality." },
+            K: { name: "Kinesthetic", color: "orange", icon: "fa-running", desc: "You learn best through experience and practice. You prefer simulations, practical exercises, real-life examples, case studies, and trial-and-error approaches." }
+        };
+
+        //        // --- Initialization ---
+
+        function selectAgeGroup(group, btnElement) {
+            selectedAgeGroup = group;
+            
+            // Visual feedback on selection
+            document.querySelectorAll('.age-card').forEach(card => {
+                card.classList.remove('selected', 'border-indigo-600', 'bg-indigo-50');
+                card.classList.add('border-gray-200', 'bg-white');
+            });
+            
+            btnElement.classList.remove('border-gray-200', 'bg-white');
+            btnElement.classList.add('selected', 'border-indigo-600', 'bg-indigo-50');
+
+            // Enable start button
+            const startBtn = document.getElementById('start-btn');
+            startBtn.disabled = false;
+        }
+
+        function prepareBattery() {
+            flattenedQuestions = [];
+            const batteryToUse = assessmentBatteries[selectedAgeGroup] || assessmentBatteries['adult'];
+            
+            // Flatten the battery for easier iteration
+            batteryToUse.forEach(phase => {
+                phase.questions.forEach(q => {
+                    flattenedQuestions.push({
+                        ...q,
+                        phaseName: phase.phase
+                    });
+                });
+            });
+        }
+
+
+        // --- Navigation ---
+        function switchTab(tabId) {
+            document.getElementById('view-assessment').classList.add('hidden');
+            document.getElementById('view-translator').classList.add('hidden');
+            
+            document.getElementById('nav-assessment').classList.remove('text-indigo-600', 'bg-indigo-50');
+            document.getElementById('nav-translator').classList.remove('text-indigo-600', 'bg-indigo-50');
+
+            if(tabId === 'assessment') {
+                document.getElementById('view-assessment').classList.remove('hidden');
+                document.getElementById('nav-assessment').classList.add('text-indigo-600', 'bg-indigo-50');
+            } else {
+                document.getElementById('view-translator').classList.remove('hidden');
+                document.getElementById('nav-translator').classList.add('text-indigo-600', 'bg-indigo-50');
+                updateTranslatorUI();
+            }
+        }
+
+        // --- Assessment Logic ---
+
+        function startAssessment() {
+            if (!selectedAgeGroup) return;
+            
+            prepareBattery();
+            
+            document.getElementById('landing-screen').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            currentQuestionIndex = 0;
+            scores = { V: 0, A: 0, R: 0, K: 0 };
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = flattenedQuestions[currentQuestionIndex];
+            const totalQuestions = flattenedQuestions.length;
+            
+            // Update Headers & Progress
+            document.getElementById('test-phase-label').innerText = `Phase: ${q.phaseName}`;
+            document.getElementById('progress-text').innerText = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
+            
+            const progressPercent = ((currentQuestionIndex) / totalQuestions) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            // Setup Question Text
+            document.getElementById('question-text').innerText = q.text;
+            const scenarioEl = document.getElementById('question-scenario');
+            if (q.scenario) {
+                scenarioEl.innerText = q.scenario;
+                scenarioEl.classList.remove('hidden');
+            } else {
+                scenarioEl.classList.add('hidden');
+            }
+
+            // Render Options
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            // Shuffle options to prevent pattern guessing
+            const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2 group';
+                
+                // Keep the category hidden in the DOM dataset
+                btn.dataset.category = opt.category;
+                
+                btn.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 mr-4 group-hover:border-indigo-500 flex items-center justify-center option-indicator">
+                            <!-- checked icon injected here when selected -->
+                        </div>
+                        <span class="text-gray-700">${opt.text}</span>
+                    </div>
+                `;
+                
+                btn.onclick = () => selectOption(btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Reset Next Button
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.classList.remove('hidden');
+            nextBtn.disabled = true;
+            
+            // Animation reset
+            const qa = document.getElementById('question-area');
+            qa.classList.remove('fade-in');
+            void qa.offsetWidth; // trigger reflow
+            qa.classList.add('fade-in');
+        }
+
+        function selectOption(selectedBtn) {
+            // Deselect all
+            const buttons = document.getElementById('options-container').querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'bg-indigo-50');
+                btn.classList.add('border-gray-200');
+                btn.querySelector('.option-indicator').innerHTML = '';
+                btn.querySelector('.option-indicator').classList.remove('border-indigo-600', 'bg-indigo-600');
+            });
+
+            // Select clicked
+            selectedBtn.classList.remove('border-gray-200');
+            selectedBtn.classList.add('border-indigo-600', 'bg-indigo-50');
+            
+            const indicator = selectedBtn.querySelector('.option-indicator');
+            indicator.classList.add('border-indigo-600', 'bg-indigo-600');
+            indicator.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+
+            // Mark category as selected for this question
+            document.getElementById('options-container').dataset.selectedCategory = selectedBtn.dataset.category;
+
+            // Enable Next
+            document.getElementById('next-btn').disabled = false;
+        }
+
+        function nextQuestion() {
+            const totalQuestions = flattenedQuestions.length;
+            const selectedCat = document.getElementById('options-container').dataset.selectedCategory;
+            if (selectedCat) {
+                scores[selectedCat]++;
+            }
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < totalQuestions) {
+                renderQuestion();
+            } else {
+                finishAssessment();
+            }
+        }
+
+        function finishAssessment() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('progress-bar').style.width = '100%';
+            
+            calculateProfile();
+            renderResults();
+            
+            document.getElementById('results-container').classList.remove('hidden');
+            document.getElementById('nav-translator').classList.remove('hidden'); // Unlock Translator
+        }
+
+        function calculateProfile() {
+            const totalQuestions = flattenedQuestions.length;
+            // Find max score
+            let maxScore = 0;
+            let primary = 'V';
+            
+            // Map scores to array for sorting
+            const scoreArray = Object.keys(scores).map(key => ({
+                key: key,
+                score: scores[key],
+                details: varkDetails[key]
+            }));
+
+            scoreArray.sort((a, b) => b.score - a.score);
+
+            userProfile = {
+                primary: scoreArray[0],
+                secondary: scoreArray[1].score > 0 ? scoreArray[1] : null,
+                allScores: scoreArray,
+                total: totalQuestions
+            };
+        }
+
+        function renderResults() {
+            const totalQuestions = flattenedQuestions.length;
+            // Summary text
+            document.getElementById('primary-style-name').innerText = userProfile.primary.details.name;
+            document.getElementById('primary-style-desc').innerText = userProfile.primary.details.desc;
+            
+            const secName = userProfile.secondary && userProfile.secondary.score > 0 
+                ? `${userProfile.secondary.details.name} (Score: ${userProfile.secondary.score})` 
+                : "None distinct";
+            document.getElementById('secondary-style-name').innerText = secName;
+
+            // Render Bars
+            const barsContainer = document.getElementById('results-bars');
+            barsContainer.innerHTML = '';
+
+            userProfile.allScores.forEach(item => {
+                const percentage = (item.score / totalQuestions) * 100;
+                
+                // Color mapping
+                const colorMap = { V: 'bg-blue-500', A: 'bg-green-500', R: 'bg-purple-500', K: 'bg-orange-500' };
+                const barColor = colorMap[item.key];
+
+                const barHTML = `
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-gray-700"><i class="fas ${item.details.icon} mr-1 w-4"></i> ${item.details.name}</span>
+                            <span class="text-gray-500">${item.score} pts</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="${barColor} h-2.5 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+                barsContainer.innerHTML += barHTML;
+            });
+        }
+
+        function resetAssessment() {
+            document.getElementById('results-container').classList.add('hidden');
+            document.getElementById('landing-screen').classList.remove('hidden');
+            document.getElementById('nav-translator').classList.add('hidden');
+            userProfile = null;
+            selectedAgeGroup = null;
+            document.querySelectorAll('.age-card').forEach(card => {
+                card.classList.remove('selected', 'border-indigo-600', 'bg-indigo-50');
+                card.classList.add('border-gray-200', 'bg-white');
+            });
+            document.getElementById('start-btn').disabled = true;
+        }
+
+        // --- Translator Logic ---
+
+        function updateTranslatorUI() {
+            if (userProfile) {
+                document.getElementById('translator-profile-badge').innerText = userProfile.primary.details.name;
+                
+                // Dynamic border color based on primary style
+                const colorMap = { V: '#3b82f6', A: '#22c55e', R: '#a855f7', K: '#f97316' };
+                document.getElementById('translated-output').style.borderLeftColor = colorMap[userProfile.primary.key];
+            } else {
+                document.getElementById('translator-profile-badge').innerText = "General";
+            }
+        }
+
+        function translateContent() {
+            const sourceText = document.getElementById('source-text').value.trim();
+            if (!sourceText) {
+                alertCustom("Please enter some text to translate.");
+                return;
+            }
+
+            if (!userProfile) {
+                 alertCustom("Please complete the assessment first to get your profile.");
+                 switchTab('assessment');
+                 return;
+            }
+
+            const btn = document.getElementById('translate-btn');
+            const spinner = document.getElementById('translate-spinner');
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+
+            // Simulate API processing time for the "translation"
+            setTimeout(() => {
+                const adaptedHTML = applyStyleRules(sourceText, userProfile.primary.key);
+                
+                const outputArea = document.getElementById('translated-output');
+                outputArea.innerHTML = adaptedHTML;
+                outputArea.classList.add('fade-in');
+                setTimeout(() => outputArea.classList.remove('fade-in'), 500);
+
+                document.getElementById('copy-btn').classList.remove('hidden');
+                
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }, 800);
+        }
+
+        // Simulating an LLM/Rule-based adaptation
+        function applyStyleRules(text, styleKey) {
+            // Basic paragraph splitting
+            const paragraphs = text.split('\n\n').filter(p => p.trim().length > 0);
+            let result = '';
+
+            switch(styleKey) {
+                case 'V': // Visual: Needs structure, bullet points, mock "diagrams" or emphasis
+                    result += `<h3 class="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2"><i class="fas fa-project-diagram mr-2"></i> Structural Breakdown</h3>`;
+                    
+                    // Create a mock visual map out of the first sentence
+                    if(paragraphs.length > 0) {
+                        const firstSentences = paragraphs[0].split('.')[0];
+                         result += `
+                         <div class="bg-blue-50 p-4 rounded-lg mb-6 flex items-center justify-center border border-blue-100">
+                            <div class="text-center font-semibold text-blue-700">${firstSentences}...</div>
+                         </div>`;
+                    }
+
+                    result += `<ul class="space-y-4 list-none">`;
+                    paragraphs.forEach(p => {
+                        // Highlight keywords visually (simulated by wrapping random words in strong tags)
+                        let highlighted = p.replace(/(\b[A-Z][a-z]+\b)/g, '<span class="text-blue-600 font-semibold">$1</span>');
+                        result += `<li class="flex"><i class="fas fa-caret-right text-blue-500 mt-1 mr-3"></i> <div>${highlighted}</div></li>`;
+                    });
+                    result += `</ul>`;
+                    break;
+
+                case 'A': // Aural: Conversational tone, Q&A format, analogies
+                    result += `<h3 class="text-xl font-bold text-green-800 mb-4"><i class="fas fa-podcast mr-2"></i> Conversational Summary</h3>`;
+                    result += `<div class="bg-green-50 p-4 rounded-lg mb-4 italic text-green-800">"Imagine we are talking over coffee. Here is what you need to hear about this topic:"</div>`;
+                    
+                    paragraphs.forEach((p, i) => {
+                        if (i % 2 === 0) {
+                            result += `<div class="mb-4"><strong>Key Point:</strong> Let's talk about this... ${p}</div>`;
+                        } else {
+                            result += `<div class="mb-4 pl-4 border-l-4 border-green-300 text-gray-700"><em>"To put it another way..."</em> ${p}</div>`;
+                        }
+                    });
+                    break;
+
+                case 'R': // Read/Write: Headings, structured paragraphs, lists, exact definitions
+                    result += `<h3 class="text-xl font-bold text-purple-800 mb-4 border-b border-purple-800 pb-1">Detailed Analysis</h3>`;
+                    
+                    paragraphs.forEach((p, i) => {
+                        result += `<h4 class="font-semibold text-purple-700 mt-4 mb-2">Section ${i+1}.0</h4>`;
+                        result += `<p class="mb-4 text-gray-800 leading-relaxed text-justify">${p}</p>`;
+                    });
+                    
+                    // Add a mock glossary
+                     result += `
+                     <div class="mt-6 border-t border-gray-200 pt-4">
+                        <h4 class="font-bold text-gray-800 mb-2">Key Terms Extraction (R/W Optimized):</h4>
+                        <ul class="list-disc pl-5 text-sm text-gray-600">
+                            <li><strong>Concept A:</strong> Derived from paragraph 1.</li>
+                            <li><strong>Concept B:</strong> Extracted context from reading.</li>
+                        </ul>
+                     </div>`;
+                    break;
+
+                case 'K': // Kinesthetic: Action-oriented, case studies, "How to apply"
+                    result += `<h3 class="text-xl font-bold text-orange-800 mb-4"><i class="fas fa-tools mr-2"></i> Action Plan & Application</h3>`;
+                    
+                    result += `<div class="bg-orange-100 p-4 rounded mb-6 text-orange-900 border border-orange-200">
+                        <strong>Your Task:</strong> Read through the scenarios below and imagine applying them to a real-world problem.
+                    </div>`;
+
+                    paragraphs.forEach((p, i) => {
+                        result += `<div class="mb-6 bg-white p-4 shadow-sm border border-gray-100 rounded">
+                            <h4 class="font-bold text-gray-800 mb-2 uppercase text-xs tracking-wider">Real-world Scenario ${i+1}</h4>
+                            <p class="mb-3">${p}</p>
+                            <div class="bg-gray-50 p-3 text-sm rounded border-dashed border-2 border-gray-300">
+                                <strong>Try this:</strong> How would you physically implement the idea described above?
+                            </div>
+                        </div>`;
+                    });
+                    break;
+            }
+
+            return result;
+        }
+
+        function copyTranslatedText() {
+            const outputArea = document.getElementById('translated-output');
+            // Extract text without HTML tags for copying
+            const textToCopy = outputArea.innerText;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyBtn = document.getElementById('copy-btn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check mr-1 text-green-600"></i> Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                     const copyBtn = document.getElementById('copy-btn');
+                     copyBtn.innerHTML = '<i class="fas fa-check mr-1 text-green-600"></i> Copied!';
+                     setTimeout(() => copyBtn.innerHTML = '<i class="far fa-copy mr-1"></i> Copy', 2000);
+                } catch (err) {
+                    alertCustom("Copy failed");
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Custom alert to avoid native window.alert
+        function alertCustom(message) {
+            // Check if alert container exists
+            let alertContainer = document.getElementById('custom-alert');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.id = 'custom-alert';
+                alertContainer.className = 'fixed top-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full opacity-0 flex items-center';
+                document.body.appendChild(alertContainer);
+            }
+            
+            alertContainer.innerHTML = `<i class="fas fa-exclamation-circle text-yellow-400 mr-3"></i> ${message}`;
+            
+            // Show
+            setTimeout(() => {
+                alertContainer.classList.remove('translate-x-full', 'opacity-0');
+            }, 10);
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                alertContainer.classList.add('translate-x-full', 'opacity-0');
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
