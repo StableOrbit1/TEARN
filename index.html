@@ -101,41 +101,39 @@
         <!-- GAME SCREEN -->
         <div id="game-screen" class="hidden flex-col h-full fade-in pt-8 md:pt-10">
             <!-- Scoreboards -->
-            <div class="flex flex-row justify-between items-stretch gap-3 md:gap-8 mb-6 relative w-full">
-                <!-- VS Badge -->
-                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-gray-700 rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center z-20 font-black text-gray-500 text-xs md:text-sm shadow-xl">VS</div>
-
+            <div class="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 md:gap-6 mb-6 w-full">
                 <!-- Team 1 Board -->
-                <div class="flex-1 flex flex-col items-center md:items-start glass-panel rounded-3xl p-4 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden" id="board-t1">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-bl-full -z-10 pointer-events-none"></div>
-                    <h2 class="text-xl md:text-3xl font-black text-cyan-400 text-center md:text-left w-full truncate" id="game-t1-name">Team 1</h2>
+                <div class="flex flex-col items-center justify-center glass-panel rounded-2xl md:rounded-3xl p-3 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden" id="board-t1">
+                    <div class="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 bg-cyan-500/10 rounded-bl-full -z-10 pointer-events-none"></div>
+                    <h2 class="text-sm md:text-2xl font-black text-cyan-400 w-full truncate text-center mb-1 md:mb-2 leading-tight" id="game-t1-name">Team 1</h2>
                     
-                    <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-6 mt-2 md:mt-4 w-full justify-center md:justify-start">
-                        <div class="text-center md:text-left">
-                            <span class="text-4xl md:text-5xl font-mono font-bold text-white" id="game-t1-score">0</span>
-                            <span class="text-xs text-gray-400 uppercase font-bold ml-1">pts</span>
-                        </div>
-                        <div class="flex flex-col items-center md:items-start pb-1">
-                            <p class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-bold">Progress</p>
-                            <div class="flex gap-1.5" id="game-t1-dots"></div>
-                        </div>
+                    <div class="flex items-baseline justify-center gap-1 mb-2">
+                        <span class="text-3xl md:text-5xl font-mono font-bold text-white leading-none" id="game-t1-score">0</span>
+                        <span class="text-[10px] md:text-xs text-gray-400 uppercase font-bold">pts</span>
                     </div>
+                    
+                    <div class="flex flex-col items-center w-full">
+                        <div class="flex gap-1 md:gap-1.5" id="game-t1-dots"></div>
+                    </div>
+                </div>
+
+                <!-- VS Badge -->
+                <div class="flex items-center justify-center">
+                    <div class="bg-slate-900 border-2 border-gray-700 rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center z-20 font-black text-gray-500 text-[10px] md:text-sm shadow-xl">VS</div>
                 </div>
                 
                 <!-- Team 2 Board -->
-                <div class="flex-1 flex flex-col items-center md:items-end glass-panel rounded-3xl p-4 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden" id="board-t2">
-                    <div class="absolute top-0 left-0 w-24 h-24 bg-purple-500/10 rounded-br-full -z-10 pointer-events-none"></div>
-                    <h2 class="text-xl md:text-3xl font-black text-purple-400 text-center md:text-right w-full truncate" id="game-t2-name">Team 2</h2>
+                <div class="flex flex-col items-center justify-center glass-panel rounded-2xl md:rounded-3xl p-3 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden" id="board-t2">
+                    <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 bg-purple-500/10 rounded-br-full -z-10 pointer-events-none"></div>
+                    <h2 class="text-sm md:text-2xl font-black text-purple-400 w-full truncate text-center mb-1 md:mb-2 leading-tight" id="game-t2-name">Team 2</h2>
                     
-                    <div class="flex flex-col md:flex-row-reverse md:items-end gap-2 md:gap-6 mt-2 md:mt-4 w-full justify-center md:justify-end">
-                        <div class="text-center md:text-right">
-                            <span class="text-4xl md:text-5xl font-mono font-bold text-white" id="game-t2-score">0</span>
-                            <span class="text-xs text-gray-400 uppercase font-bold mr-1">pts</span>
-                        </div>
-                        <div class="flex flex-col items-center md:items-end pb-1">
-                            <p class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-bold">Progress</p>
-                            <div class="flex gap-1.5" id="game-t2-dots"></div>
-                        </div>
+                    <div class="flex items-baseline justify-center gap-1 mb-2">
+                        <span class="text-3xl md:text-5xl font-mono font-bold text-white leading-none" id="game-t2-score">0</span>
+                        <span class="text-[10px] md:text-xs text-gray-400 uppercase font-bold">pts</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center w-full">
+                        <div class="flex gap-1 md:gap-1.5" id="game-t2-dots"></div>
                     </div>
                 </div>
             </div>
@@ -929,7 +927,7 @@
 
             // 5 Dots logic for Win Condition
             const getDots = (correct, colorClass, glowClass) => Array(5).fill(0).map((_, i) => 
-                `<div class="w-3 h-3 md:w-4 md:h-4 rounded-full ${i < correct ? `${colorClass} ${glowClass}` : 'bg-gray-700 border border-gray-600'}"></div>`
+                `<div class="w-2.5 h-2.5 md:w-4 md:h-4 rounded-full ${i < correct ? `${colorClass} ${glowClass}` : 'bg-gray-700 border border-gray-600'}"></div>`
             ).join('');
             
             document.getElementById('game-t1-dots').innerHTML = getDots(data.t1Correct, 'bg-cyan-400', 'shadow-[0_0_8px_rgba(34,211,238,0.8)]');
@@ -939,17 +937,16 @@
             const b2 = document.getElementById('board-t2');
             const badge = document.getElementById('turn-badge');
             
-            const baseClassT1 = "flex-1 flex flex-col items-center md:items-start glass-panel rounded-3xl p-4 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden";
-            const baseClassT2 = "flex-1 flex flex-col items-center md:items-end glass-panel rounded-3xl p-4 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden";
+            const baseClass = "flex flex-col items-center justify-center glass-panel rounded-2xl md:rounded-3xl p-3 md:p-6 shadow-lg border-2 transition-all duration-300 relative overflow-hidden";
             
             if(data.currentTeam === 1) {
-                b1.className = `${baseClassT1} border-cyan-500 shadow-[0_0_25px_rgba(6,182,212,0.25)] transform scale-[1.02] bg-gray-800/90 z-10`;
-                b2.className = `${baseClassT2} border-transparent opacity-40 scale-95`;
+                b1.className = `${baseClass} border-cyan-500 shadow-[0_0_25px_rgba(6,182,212,0.25)] transform scale-[1.02] bg-gray-800/90 z-10`;
+                b2.className = `${baseClass} border-transparent opacity-40 scale-95`;
                 badge.innerText = `${data.t1Name}'s Turn`;
                 badge.className = "px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest bg-cyan-500 text-slate-900 shadow-cyan-500/50 inline-block";
             } else {
-                b2.className = `${baseClassT2} border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.25)] transform scale-[1.02] bg-gray-800/90 z-10`;
-                b1.className = `${baseClassT1} border-transparent opacity-40 scale-95`;
+                b2.className = `${baseClass} border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.25)] transform scale-[1.02] bg-gray-800/90 z-10`;
+                b1.className = `${baseClass} border-transparent opacity-40 scale-95`;
                 badge.innerText = `${data.t2Name}'s Turn`;
                 badge.className = "px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest bg-purple-500 text-white shadow-purple-500/50 inline-block";
             }
