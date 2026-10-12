@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Can I Quote You On That? - Multiplayer</title>
+    <title>Can I Quote You On That? - Versus Multiplayer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
@@ -223,10 +223,17 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Environment Variables Integration
+        // Environment Setup
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "dummy", authDomain: "dummy", projectId: "dummy", storageBucket: "dummy", messagingSenderId: "dummy", appId: "dummy"
+        
+        // Exact config provided
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPnvgg6pWT7fhD8jXc14VbSofjL6JL3Xs",
+            authDomain: "anon-5693a.firebaseapp.com",
+            projectId: "anon-5693a",
+            storageBucket: "anon-5693a.firebasestorage.app",
+            messagingSenderId: "1001618306936",
+            appId: "1:1001618306936:web:11143cdff5eb95f57d3a8d"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -240,82 +247,267 @@
         let isHost = false;
         let localPlayerName = "";
         
-        // Strict Path Reference Generator
+        // Mandatory Strict Path generator
         const getGameRef = (code) => doc(db, 'artifacts', appId, 'public', 'data', 'games', code);
 
-        // --- Dataset ---
-        const quotesDB = [
-            {q: "So you're telling me there's a chance...", s: "Lloyd Christmas - Dumb and Dumber", y: 1994},
-            {q: "Ugh, as if!", s: "Cher Horowitz - Clueless", y: 1995},
-            {q: "Alrighty then!", s: "Ace Ventura", y: 1994},
-            {q: "Smokin'!", s: "Stanley Ipkiss - The Mask", y: 1994},
-            {q: "The price is wrong, bitch!", s: "Happy Gilmore", y: 1996},
-            {q: "Yeah, I'm gonna need you to go ahead and come in on Saturday.", s: "Bill Lumbergh - Office Space", y: 1999},
-            {q: "Two yutes.", s: "Vincent Gambini - My Cousin Vinny", y: 1992},
-            {q: "It was a run-by fruiting!", s: "Daniel Hillard - Mrs. Doubtfire", y: 1993},
-            {q: "Don't drive angry!", s: "Phil Connors - Groundhog Day", y: 1993},
-            {q: "Alright, alright, alright.", s: "David Wooderson - Dazed and Confused", y: 1993},
-            {q: "Yeah, well, you know, that's just, like, your opinion, man.", s: "The Dude - The Big Lebowski", y: 1998},
-            {q: "Welcome to Earth.", s: "Capt. Steven Hiller - Independence Day", y: 1996},
-            {q: "There is no spoon.", s: "Spoon Boy - The Matrix", y: 1999},
-            {q: "The first rule of Fight Club is: You do not talk about Fight Club.", s: "Tyler Durden - Fight Club", y: 1999},
-            {q: "I see dead people.", s: "Cole Sear - The Sixth Sense", y: 1999},
-            {q: "Show me the money!", s: "Rod Tidwell - Jerry Maguire", y: 1996},
-            {q: "Do you understand the words that are coming out of my mouth?", s: "Detective Carter - Rush Hour", y: 1998},
-            {q: "I'm just a girl, standing in front of a boy, asking him to love her.", s: "Anna Scott - Notting Hill", y: 1999},
-            {q: "Keep the change, ya filthy animal.", s: "Gangster on TV - Home Alone", y: 1990},
-            {q: "You are a sad, strange little man.", s: "Buzz Lightyear - Toy Story", y: 1995},
-            {q: "Life was like a box of chocolates. You never know what you're gonna get.", s: "Forrest Gump", y: 1994},
-            {q: "I'm in a glass case of emotion!", s: "Ron Burgundy - Anchorman", y: 2004},
-            {q: "Get in loser, we're going shopping.", s: "Regina George - Mean Girls", y: 2004},
-            {q: "What, like it's hard?", s: "Elle Woods - Legally Blonde", y: 2001},
-            {q: "I am McLovin.", s: "Fogell - Superbad", y: 2007},
-            {q: "What is this? A center for ants?!", s: "Derek Zoolander", y: 2001},
-            {q: "You sit on a throne of lies!", s: "Buddy - Elf", y: 2003},
-            {q: "Gosh, idiot!", s: "Napoleon Dynamite", y: 2004},
-            {q: "You're my boy, Blue!", s: "Frank Ricard - Old School", y: 2003},
-            {q: "Ma! The meatloaf! Fuck!", s: "Chazz Reinhold - Wedding Crashers", y: 2005},
-            {q: "Great success!", s: "Borat", y: 2006},
-            {q: "Ogres are like onions.", s: "Shrek", y: 2001},
-            {q: "You've got red on you.", s: "Shaun - Shaun of the Dead", y: 2004},
-            {q: "The greater good.", s: "Sandford Town Council - Hot Fuzz", y: 2007},
-            {q: "You either die a hero, or you live long enough to see yourself become the villain.", s: "Harvey Dent - The Dark Knight", y: 2008},
-            {q: "I will find you, and I will kill you.", s: "Bryan Mills - Taken", y: 2008},
-            {q: "Are you not entertained?!", s: "Maximus - Gladiator", y: 2000},
-            {q: "I drink your milkshake! I drink it up!", s: "Daniel Plainview - There Will Be Blood", y: 2007},
-            {q: "This is Sparta!", s: "King Leonidas - 300", y: 2006},
-            {q: "Just keep swimming.", s: "Dory - Finding Nemo", y: 2003},
-            {q: "I wish I knew how to quit you.", s: "Jack Twist - Brokeback Mountain", y: 2005},
-            {q: "These pretzels are making me thirsty!", s: "Cosmo Kramer - Seinfeld", y: 1991},
-            {q: "No soup for you!", s: "The Soup Nazi - Seinfeld", y: 1995},
-            {q: "He's her lobster!", s: "Phoebe Buffay - Friends", y: 1996},
-            {q: "Pivot!", s: "Ross Geller - Friends", y: 1999},
-            {q: "The truth is out there.", s: "Tagline - The X-Files", y: 1993},
-            {q: "Eat my shorts.", s: "Bart Simpson - The Simpsons", y: 1990},
-            {q: "Respect my authoritah!", s: "Eric Cartman - South Park", y: 1998},
-            {q: "Good news, everyone!", s: "Professor Farnsworth - Futurama", y: 1999},
-            {q: "Bears, Beets, Battlestar Galactica.", s: "Jim Halpert - The Office", y: 2007},
-            {q: "That's what she said.", s: "Michael Scott - The Office", y: 2005},
-            {q: "I've made a huge mistake.", s: "Gob Bluth - Arrested Development", y: 2003},
-            {q: "Legen—wait for it—dary!", s: "Barney Stinson - How I Met Your Mother", y: 2005},
-            {q: "Clear eyes, full hearts, can't lose.", s: "Coach Taylor - Friday Night Lights", y: 2006},
-            {q: "Omar comin'!", s: "Street Kids - The Wire", y: 2002},
-            {q: "Bazinga!", s: "Sheldon Cooper - The Big Bang Theory", y: 2008},
-            {q: "I know what I'm about, son.", s: "Ron Swanson - Parks and Recreation", y: 2009},
-            {q: "I'm Rick James, bitch!", s: "Dave Chappelle - Chappelle's Show", y: 2004},
-            {q: "Winter is coming.", s: "Ned Stark - Game of Thrones", y: 2011},
-            {q: "I am the one who knocks!", s: "Walter White - Breaking Bad", y: 2011},
-            {q: "May the Force be with you.", s: "Han Solo / General - Star Wars", y: 1977},
-            {q: "I'll be back.", s: "The Terminator", y: 1984},
-            {q: "You're gonna need a bigger boat.", s: "Chief Brody - Jaws", y: 1975},
-            {q: "Here's Johnny!", s: "Jack Torrance - The Shining", y: 1980},
-            {q: "E.T. phone home.", s: "E.T. the Extra-Terrestrial", y: 1982},
-            {q: "Roads? Where we're going we don't need roads.", s: "Doc Brown - Back to the Future", y: 1985},
-            {q: "Yippee-ki-yay, motherf***er.", s: "John McClane - Die Hard", y: 1988},
-            {q: "Frankly, my dear, I don't give a damn.", s: "Rhett Butler - Gone with the Wind", y: 1939},
-            {q: "Toto, I've a feeling we're not in Kansas anymore.", s: "Dorothy Gale - The Wizard of Oz", y: 1939},
-            {q: "Rosebud.", s: "Charles Foster Kane - Citizen Kane", y: 1941}
+        const rawQuotes = [
+            ["So you're telling me there's a chance...", "Lloyd Christmas - Dumb and Dumber", 1994],
+            ["Ugh, as if!", "Cher Horowitz - Clueless", 1995],
+            ["Alrighty then!", "Ace Ventura - Pet Detective", 1994],
+            ["Smokin'!", "Stanley Ipkiss - The Mask", 1994],
+            ["Schwing!", "Wayne Campbell - Wayne's World", 1992],
+            ["Fat guy in a little coat.", "Tommy Callahan - Tommy Boy", 1995],
+            ["The price is wrong, bitch!", "Happy Gilmore", 1996],
+            ["Stop looking at me, swan!", "Billy Madison", 1995],
+            ["Yeah, I'm gonna need you to go ahead and come in on Saturday.", "Bill Lumbergh - Office Space", 1999],
+            ["Two yutes.", "Vincent Gambini - My Cousin Vinny", 1992],
+            ["It was a run-by fruiting!", "Daniel Hillard - Mrs. Doubtfire", 1993],
+            ["Don't drive angry!", "Phil Connors - Groundhog Day", 1993],
+            ["Alright, alright, alright.", "David Wooderson - Dazed and Confused", 1993],
+            ["Yeah, well, you know, that's just, like, your opinion, man.", "The Dude - The Big Lebowski", 1998],
+            ["I'm in a glass case of emotion!", "Ron Burgundy - Anchorman", 2004],
+            ["I love lamp.", "Brick Tamland - Anchorman", 2004],
+            ["Get in loser, we're going shopping.", "Regina George - Mean Girls", 2004],
+            ["She doesn't even go here!", "Damian Leigh - Mean Girls", 2004],
+            ["What, like it's hard?", "Elle Woods - Legally Blonde", 2001],
+            ["I am McLovin.", "Fogell - Superbad", 2007],
+            ["What is this? A center for ants?!", "Derek Zoolander - Zoolander", 2001],
+            ["You sit on a throne of lies!", "Buddy - Elf", 2003],
+            ["I have a nipple, Focker, can you milk me?", "Jack Byrnes - Meet the Parents", 2000],
+            ["Gosh, idiot!", "Napoleon Dynamite", 2004],
+            ["You're my boy, Blue!", "Frank Ricard - Old School", 2003],
+            ["Ma! The meatloaf! Fuck!", "Chazz Reinhold - Wedding Crashers", 2005],
+            ["Kelly Clarkson!", "Andy Stitzer - The 40-Year-Old Virgin", 2005],
+            ["Great success!", "Borat Sagdiyev - Borat", 2006],
+            ["Ogres are like onions.", "Shrek", 2001],
+            ["You've got red on you.", "Shaun - Shaun of the Dead", 2004],
+            ["The greater good.", "Sandford Town Council - Hot Fuzz", 2007],
+            ["I don't read the script. The script reads me.", "Kirk Lazarus - Tropic Thunder", 2008],
+            ["Boats 'N Hoes!", "Brennan & Dale - Step Brothers", 2008],
+            ["If you ain't first, you're last.", "Ricky Bobby - Talladega Nights", 2006],
+            ["McLovin? What kind of a stupid name is that, Fogell?", "Officer Michaels - Superbad", 2007],
+            ["Bye Buddy, hope you find your dad.", "Mr. Narwhal - Elf", 2003],
+            ["Do you like Huey Lewis and the News?", "Patrick Bateman - American Psycho", 2000],
+            ["Welcome to Earth.", "Capt. Steven Hiller - Independence Day", 1996],
+            ["There is no spoon.", "Spoon Boy - The Matrix", 1999],
+            ["The first rule of Fight Club is: You do not talk about Fight Club.", "Tyler Durden - Fight Club", 1999],
+            ["I see dead people.", "Cole Sear - The Sixth Sense", 1999],
+            ["You complete me.", "Jerry Maguire", 1996],
+            ["Show me the money!", "Rod Tidwell - Jerry Maguire", 1996],
+            ["Do you understand the words that are coming out of my mouth?", "Detective Carter - Rush Hour", 1998],
+            ["I'm just a girl, standing in front of a boy, asking him to love her.", "Anna Scott - Notting Hill", 1999],
+            ["Keep the change, ya filthy animal.", "Gangster on TV - Home Alone", 1990],
+            ["You make me want to be a better man.", "Melvin Udall - As Good as It Gets", 1997],
+            ["You are a sad, strange little man.", "Buzz Lightyear - Toy Story", 1995],
+            ["Life was like a box of chocolates. You never know what you're gonna get.", "Forrest Gump", 1994],
+            ["You either die a hero, or you live long enough to see yourself become the villain.", "Harvey Dent - The Dark Knight", 2008],
+            ["Why so serious?", "The Joker - The Dark Knight", 2008],
+            ["I will find you, and I will kill you.", "Bryan Mills - Taken", 2008],
+            ["Are you not entertained?!", "Maximus - Gladiator", 2000],
+            ["I drink your milkshake! I drink it up!", "Daniel Plainview - There Will Be Blood", 2007],
+            ["This is Sparta!", "King Leonidas - 300", 2006],
+            ["Just keep swimming.", "Dory - Finding Nemo", 2003],
+            ["I am a golden god!", "Russell Hammond - Almost Famous", 2000],
+            ["I wish I knew how to quit you.", "Jack Twist - Brokeback Mountain", 2005],
+            ["To infinity and beyond!", "Buzz Lightyear - Toy Story", 1995],
+            ["I'm the king of the world!", "Jack Dawson - Titanic", 1997],
+            ["My precious.", "Gollum - The Lord of the Rings: The Two Towers", 2002],
+            ["You shall not pass!", "Gandalf - The Lord of the Rings", 2001],
+            ["With great power comes great responsibility.", "Uncle Ben - Spider-Man", 2002],
+            ["I volunteer as tribute!", "Katniss Everdeen - The Hunger Games", 2012],
+            ["Wakanda Forever!", "T'Challa - Black Panther", 2018],
+            ["I am Iron Man.", "Tony Stark - Iron Man", 2008],
+            ["Some motherfuckers are always trying to ice skate uphill.", "Blade", 1998],
+            ["What's in the box?!", "Detective Mills - Se7en", 1995],
+            ["Houston, we have a problem.", "Jim Lovell - Apollo 13", 1995],
+            ["That'll do, pig. That'll do.", "Arthur Hoggett - Babe", 1995],
+            ["You're killing me, Smalls!", "Ham Porter - The Sandlot", 1993],
+            ["For ev vver.", "Squints - The Sandlot", 1993],
+            ["These pretzels are making me thirsty!", "Cosmo Kramer - Seinfeld", 1991],
+            ["Hello, Newman.", "Jerry Seinfeld - Seinfeld", 1992],
+            ["Master of my domain.", "Jerry Seinfeld - Seinfeld", 1992],
+            ["No soup for you!", "The Soup Nazi - Seinfeld", 1995],
+            ["Yada, yada, yada.", "Seinfeld", 1997],
+            ["He's her lobster!", "Phoebe Buffay - Friends", 1996],
+            ["Smelly cat, smelly cat, what are they feeding you?", "Phoebe Buffay - Friends", 1995],
+            ["Could I *be* wearing any more clothes?", "Joey Tribbiani - Friends", 1996],
+            ["We were on a break!", "Ross Geller - Friends", 1997],
+            ["Pivot!", "Ross Geller - Friends", 1999],
+            ["I'm listening.", "Dr. Frasier Crane - Frasier", 1993],
+            ["The truth is out there.", "Tagline - The X-Files", 1993],
+            ["Trust no one.", "Deep Throat - The X-Files", 1993],
+            ["Have mercy!", "Uncle Jesse - Full House", 1990],
+            ["How rude!", "Stephanie Tanner - Full House", 1990],
+            ["You got it, dude.", "Michelle Tanner - Full House", 1990],
+            ["Eat my shorts.", "Bart Simpson - The Simpsons", 1990],
+            ["Excellent.", "Mr. Burns - The Simpsons", 1990],
+            ["D'oh!", "Homer Simpson - The Simpsons", 1989],
+            ["Screw you guys, I'm going home!", "Eric Cartman - South Park", 1997],
+            ["Respect my authoritah!", "Eric Cartman - South Park", 1998],
+            ["Oh my god, they killed Kenny!", "Stan Marsh - South Park", 1997],
+            ["M'kay.", "Mr. Mackey - South Park", 1997],
+            ["Good news, everyone!", "Professor Farnsworth - Futurama", 1999],
+            ["I'm the baby, gotta love me!", "Baby Sinclair - Dinosaurs", 1991],
+            ["Talk to the hand, 'cause the face ain't listening!", "Fran Fine - The Nanny", 1993],
+            ["Who loves orange soda?", "Kel Kimble - Kenan & Kel", 1996],
+            ["Let's get dangerous.", "Drake Mallard - Darkwing Duck", 1991],
+            ["It's a Festivus for the rest of us!", "Frank Costanza - Seinfeld", 1997],
+            ["Bears, Beets, Battlestar Galactica.", "Jim Halpert - The Office", 2007],
+            ["I'm not superstitious, but I am a little stitious.", "Michael Scott - The Office", 2007],
+            ["That's what she said.", "Michael Scott - The Office", 2005],
+            ["I've made a huge mistake.", "Gob Bluth - Arrested Development", 2003],
+            ["There's always money in the banana stand.", "George Bluth Sr. - Arrested Development", 2003],
+            ["Legen—wait for it—dary!", "Barney Stinson - How I Met Your Mother", 2005],
+            ["Challenge accepted.", "Barney Stinson - How I Met Your Mother", 2005],
+            ["We have to go back!", "Jack Shephard - Lost", 2007],
+            ["Texas forever.", "Tim Riggins - Friday Night Lights", 2006],
+            ["Clear eyes, full hearts, can't lose.", "Coach Taylor - Friday Night Lights", 2006],
+            ["Shiiiiiiiit.", "Senator Clay Davis - The Wire", 2002],
+            ["Omar comin'!", "Street Kids - The Wire", 2002],
+            ["Bazinga!", "Sheldon Cooper - The Big Bang Theory", 2008],
+            ["I know what I'm about, son.", "Ron Swanson - Parks and Recreation", 2009],
+            ["Treat yo self.", "Tom & Donna - Parks and Recreation", 2011],
+            ["I'm Rick James, bitch!", "Dave Chappelle - Chappelle's Show", 2004],
+            ["Truthiness.", "Stephen Colbert - The Colbert Report", 2005],
+            ["It's a beautiful day to save lives.", "Dr. Derek Shepherd - Grey's Anatomy", 2005],
+            ["You get a car! You get a car! Everybody gets a car!", "Oprah Winfrey", 2004],
+            ["I'm not here to make friends.", "Kelly Wiglesworth - Survivor", 2000],
+            ["The tribe has spoken.", "Jeff Probst - Survivor", 2000],
+            ["Please pack your knives and go.", "Padma Lakshmi - Top Chef", 2006],
+            ["You're fired.", "Donald Trump - The Apprentice", 2004],
+            ["Make it work.", "Tim Gunn - Project Runway", 2004],
+            ["Gym, Tan, Laundry.", "Cast - Jersey Shore", 2009],
+            ["Winter is coming.", "Ned Stark - Game of Thrones", 2011],
+            ["You know nothing, Jon Snow.", "Ygritte - Game of Thrones", 2014],
+            ["I am the one who knocks!", "Walter White - Breaking Bad", 2011],
+            ["Yeah, science!", "Jesse Pinkman - Breaking Bad", 2008],
+            ["Don't stop believin'.", "Tony Soprano (Radio) - The Sopranos", 2007],
+            ["May the Force be with you.", "Han Solo / General - Star Wars", 1977],
+            ["I am your father.", "Darth Vader - The Empire Strikes Back", 1980],
+            ["Do, or do not. There is no try.", "Yoda - The Empire Strikes Back", 1980],
+            ["I'll be back.", "The Terminator", 1984],
+            ["Come with me if you want to live.", "Kyle Reese - The Terminator", 1984],
+            ["Hasta la vista, baby.", "The Terminator - Terminator 2 Judgment Day", 1991],
+            ["You're gonna need a bigger boat.", "Chief Brody - Jaws", 1975],
+            ["I'm gonna make him an offer he can't refuse.", "Don Corleone - The Godfather", 1972],
+            ["Keep your friends close, but your enemies closer.", "Michael Corleone - The Godfather Part II", 1974],
+            ["Here's Johnny!", "Jack Torrance - The Shining", 1980],
+            ["I love the smell of napalm in the morning.", "Lt. Col. Bill Kilgore - Apocalypse Now", 1979],
+            ["Say hello to my little friend!", "Tony Montana - Scarface", 1983],
+            ["E.T. phone home.", "E.T. the Extra-Terrestrial", 1982],
+            ["Goonies never say die!", "Mikey - The Goonies", 1985],
+            ["Who you gonna call?", "Ray Parker Jr. / Tagline - Ghostbusters", 1984],
+            ["I feel the need - the need for speed!", "Maverick & Goose - Top Gun", 1986],
+            ["Roads? Where we're going we don't need roads.", "Doc Brown - Back to the Future", 1985],
+            ["Great Scott!", "Doc Brown - Back to the Future", 1985],
+            ["Nobody puts Baby in a corner.", "Johnny Castle - Dirty Dancing", 1987],
+            ["I carried a watermelon.", "Baby Houseman - Dirty Dancing", 1987],
+            ["Yippee-ki-yay, motherf***er.", "John McClane - Die Hard", 1988],
+            ["Bueller... Bueller... Bueller...", "Economics Teacher - Ferris Bueller's Day Off", 1986],
+            ["Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.", "Ferris Bueller", 1986],
+            ["Inconceivable!", "Vizzini - The Princess Bride", 1987],
+            ["Hello. My name is Inigo Montoya. You killed my father. Prepare to die.", "Inigo Montoya - The Princess Bride", 1987],
+            ["As you wish.", "Westley - The Princess Bride", 1987],
+            ["Wax on, wax off.", "Mr. Miyagi - The Karate Kid", 1984],
+            ["Sweep the leg.", "John Kreese - The Karate Kid", 1984],
+            ["I am serious, and don't call me Shirley.", "Dr. Rumack - Airplane!", 1980],
+            ["Looks like I picked the wrong week to quit sniffing glue.", "Steve McCroskey - Airplane!", 1980],
+            ["Tears in rain.", "Roy Batty - Blade Runner", 1982],
+            ["Sloth love Chunk!", "Sloth - The Goonies", 1985],
+            ["You can't handle the truth!", "Col. Jessep - A Few Good Men", 1992],
+            ["I'll have what she's having.", "Customer - When Harry Met Sally", 1989],
+            ["Carpe diem. Seize the day, boys. Make your lives extraordinary.", "John Keating - Dead Poets Society", 1989],
+            ["O Captain! My Captain!", "Students - Dead Poets Society", 1989],
+            ["If you build it, he will come.", "The Voice - Field of Dreams", 1989],
+            ["There's no crying in baseball!", "Jimmy Dugan - A League of Their Own", 1992],
+            ["Greed, for lack of a better word, is good.", "Gordon Gekko - Wall Street", 1987],
+            ["Snap out of it!", "Loretta Castorini - Moonstruck", 1987],
+            ["You talkin' to me?", "Travis Bickle - Taxi Driver", 1976],
+            ["Adrian!", "Rocky Balboa - Rocky", 1976],
+            ["If he dies, he dies.", "Ivan Drago - Rocky IV", 1985],
+            ["Frankly, my dear, I don't give a damn.", "Rhett Butler - Gone with the Wind", 1939],
+            ["Toto, I've a feeling we're not in Kansas anymore.", "Dorothy Gale - The Wizard of Oz", 1939],
+            ["There's no place like home.", "Dorothy Gale - The Wizard of Oz", 1939],
+            ["I'll get you, my pretty, and your little dog too!", "Wicked Witch of the West - The Wizard of Oz", 1939],
+            ["Here's looking at you, kid.", "Rick Blaine - Casablanca", 1942],
+            ["We'll always have Paris.", "Rick Blaine - Casablanca", 1942],
+            ["Louis, I think this is the beginning of a beautiful friendship.", "Rick Blaine - Casablanca", 1942],
+            ["Play it, Sam. Play 'As Time Goes By.'", "Ilsa Lund - Casablanca", 1942],
+            ["Fasten your seatbelts. It's going to be a bumpy night.", "Margo Channing - All About Eve", 1950],
+            ["What we've got here is failure to communicate.", "Captain - Cool Hand Luke", 1967],
+            ["Love means never having to say you're sorry.", "Jennifer Cavilleri - Love Story", 1970],
+            ["The stuff that dreams are made of.", "Sam Spade - The Maltese Falcon", 1941],
+            ["They call me Mister Tibbs!", "Virgil Tibbs - In the Heat of the Night", 1967],
+            ["Rosebud.", "Charles Foster Kane - Citizen Kane", 1941],
+            ["Made it, Ma! Top of the world!", "Arthur 'Cody' Jarrett - White Heat", 1949],
+            ["I'm as mad as hell, and I'm not going to take this anymore!", "Howard Beale - Network", 1976],
+            ["A boy's best friend is his mother.", "Norman Bates - Psycho", 1960],
+            ["Mrs. Robinson, you're trying to seduce me. Aren't you?", "Benjamin Braddock - The Graduate", 1967],
+            ["Plastics.", "Mr. Maguire - The Graduate", 1967],
+            ["Stella! Hey, Stella!", "Stanley Kowalski - A Streetcar Named Desire", 1951],
+            ["I have always depended on the kindness of strangers.", "Blanche DuBois - A Streetcar Named Desire", 1951],
+            ["It's alive! It's alive!", "Henry Frankenstein - Frankenstein", 1931],
+            ["Get your stinking paws off me, you damned dirty ape.", "George Taylor - Planet of the Apes", 1968],
+            ["Soylent Green is people!", "Det. Robert Thorn - Soylent Green", 1973],
+            ["Open the pod bay doors, HAL.", "Dave Bowman - 2001: A Space Odyssey", 1968],
+            ["I am big! It's the pictures that got small.", "Norma Desmond - Sunset Boulevard", 1950],
+            ["Gentlemen, you can't fight in here! This is the War Room!", "President Merkin Muffley - Dr. Strangelove", 1964],
+            ["Forget it, Jake, it's Chinatown.", "Lawrence Walsh - Chinatown", 1974],
+            ["I coulda been a contender.", "Terry Malloy - On the Waterfront", 1954],
+            ["I did not have sexual relations with that woman.", "Bill Clinton", 1998],
+            ["Is this real life?", "David After Dentist", 2009],
+            ["Charlie bit my finger!", "Harry Davies-Carr - Charlie Bit My Finger", 2007],
+            ["Leave Britney alone!", "Chris Crocker", 2007],
+            ["Ain't nobody got time for that!", "Sweet Brown", 2012],
+            ["Hide your kids, hide your wife.", "Antoine Dodson", 2010],
+            ["Cash me outside, how bout dah?", "Danielle Bregoli (Bhad Bhabie)", 2016],
+            ["I'm the captain now.", "Muse - Captain Phillips", 2013],
+            ["That's a bold strategy, Cotton.", "Pepper Brooks - Dodgeball", 2004],
+            ["Nobody makes me bleed my own blood.", "White Goodman - Dodgeball", 2004],
+            ["If you can dodge a wrench, you can dodge a ball.", "Patches O'Houlihan - Dodgeball", 2004],
+            ["I am Groot.", "Groot - Guardians of the Galaxy", 2014],
+            ["I love you 3000.", "Tony Stark / Morgan Stark - Avengers: Endgame", 2019],
+            ["That is America's ass.", "Steve Rogers - Avengers: Endgame", 2019],
+            ["On Wednesdays we wear pink.", "Karen Smith - Mean Girls", 2004],
+            ["You can't sit with us!", "Gretchen Wieners - Mean Girls", 2004],
+            ["Not my tempo.", "Terence Fletcher - Whiplash", 2014],
+            ["What's the most you ever lost on a coin toss?", "Anton Chigurh - No Country for Old Men", 2007],
+            ["Do you want to build a snowman?", "Anna - Frozen", 2013],
+            ["Let it go!", "Elsa - Frozen", 2013],
+            ["Witness me!", "Nux - Mad Max: Fury Road", 2015],
+            ["What a lovely day!", "Nux - Mad Max: Fury Road", 2015],
+            ["I'm Mary Poppins, y'all!", "Yondu - Guardians of the Galaxy Vol 2", 2017],
+            ["Chewie, we're home.", "Han Solo - Star Wars: The Force Awakens", 2015],
+            ["This is the way.", "Din Djarin / The Armorer - The Mandalorian", 2019],
+            ["I have spoken.", "Kuiil - The Mandalorian", 2019],
+            ["Hello there.", "Obi-Wan Kenobi - Star Wars: Revenge of the Sith", 2005],
+            ["I don't like sand.", "Anakin Skywalker - Star Wars: Attack of the Clones", 2002],
+            ["It's over, Anakin! I have the high ground!", "Obi-Wan Kenobi - Star Wars: Revenge of the Sith", 2005],
+            ["I am inevitable.", "Thanos - Avengers: Endgame", 2019],
+            ["And I... am... Iron Man.", "Tony Stark - Avengers: Endgame", 2019],
+            ["Avengers... assemble.", "Steve Rogers - Avengers: Endgame", 2019],
+            ["Puny god.", "The Hulk - The Avengers", 2012],
+            ["That's my secret, Captain. I'm always angry.", "Bruce Banner - The Avengers", 2012],
+            ["Dormammu, I've come to bargain.", "Doctor Strange", 2016],
+            ["We are Groot.", "Groot - Guardians of the Galaxy", 2014],
+            ["He may have been your father, boy, but he wasn't your daddy.", "Yondu - Guardians of the Galaxy Vol 2", 2017],
+            ["Perfectly balanced, as all things should be.", "Thanos - Avengers: Infinity War", 2018],
+            ["Mr. Stark, I don't feel so good.", "Peter Parker - Avengers: Infinity War", 2018],
+            ["Bring me Thanos!", "Thor - Avengers: Infinity War", 2018],
+            ["I'm too old for this shit.", "Roger Murtaugh - Lethal Weapon", 1987],
+            ["My name is Maximus Decimus Meridius.", "Maximus - Gladiator", 2000],
+            ["Smile, you son of a bitch.", "Chief Brody - Jaws", 1975],
+            ["It belongs in a museum!", "Indiana Jones - The Last Crusade", 1989],
+            ["Snakes. Why did it have to be snakes?", "Indiana Jones - Raiders of the Lost Ark", 1981],
+            ["Mischief managed.", "Harry Potter", 2004],
+            ["I solemnly swear that I am up to no good.", "Harry Potter", 2004],
+            ["Yer a wizard, Harry.", "Hagrid - Harry Potter and the Sorcerer's Stone", 2001],
+            ["There is no good and evil, there is only power.", "Lord Voldemort - Harry Potter", 2001],
+            ["Always.", "Severus Snape - Harry Potter and the Deathly Hallows", 2011],
+            ["Dobby is a free elf.", "Dobby - Harry Potter and the Chamber of Secrets", 2002],
+            ["Not my daughter, you bitch!", "Molly Weasley - Harry Potter and the Deathly Hallows", 2011]
         ];
+        const quotesDB = rawQuotes.map(item => ({ q: item[0], s: item[1], y: item[2] }));
 
         const showScreen = (id) => {
             ['auth-screen', 'menu-screen', 'lobby-screen', 'game-screen', 'feedback-screen', 'win-screen']
@@ -330,7 +522,6 @@
             setTimeout(() => errEl.classList.add('hidden'), 4000);
         };
 
-        // Init Auth Sequence
         async function initAuth() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -340,12 +531,10 @@
                 }
                 currentUser = auth.currentUser;
                 
-                // Read local storage for name preference (allowed for convenience, game state is firestore)
                 const savedName = localStorage.getItem('cqyot_name');
                 if(savedName) {
                     document.getElementById('player-name').value = savedName;
                 }
-                
                 showScreen('menu-screen');
             } catch (error) {
                 console.error("Auth Error:", error);
@@ -353,7 +542,6 @@
             }
         }
 
-        // Generate Random 4-letter Code
         const genCode = () => {
             let c = '';
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -364,7 +552,7 @@
         const getRandomQuote = (usedArray) => {
             let available = quotesDB.filter((_, i) => !usedArray.includes(i));
             if(available.length === 0) {
-                usedArray.length = 0; // Reset if all used
+                usedArray.length = 0; // Reset
                 available = quotesDB;
             }
             const randIndex = Math.floor(Math.random() * available.length);
@@ -372,8 +560,6 @@
             return { quote: available[randIndex], index: originalIndex };
         };
 
-        
-        // Expose to window for HTML buttons
         window.createGame = async () => {
             if(!currentUser) return;
             const name = document.getElementById('player-name').value.trim() || "Host";
@@ -390,7 +576,7 @@
                 t1Name: "Team 1",
                 t2Name: "Team 2",
                 players: {
-                    [currentUser.uid]: { name: name, team: 1 } // Host defaults to T1
+                    [currentUser.uid]: { name: name, team: 1 } 
                 },
                 t1Score: 0, t2Score: 0,
                 t1Correct: 0, t2Correct: 0,
@@ -426,7 +612,6 @@
                     const data = docSnap.data();
                     isHost = (data.host === currentUser.uid);
                     
-                    // Add player to Team 2 by default if joining
                     const newPlayers = { ...data.players };
                     newPlayers[currentUser.uid] = { name: name, team: isHost ? 1 : 2 };
                     
@@ -460,7 +645,6 @@
             await updateDoc(getGameRef(currentGameCode), { [field]: newName });
         };
 
-        
         window.startMatch = async () => {
             if(!isHost || !currentGameCode) return;
             try {
@@ -472,7 +656,7 @@
                     phase: 'playing',
                     currentQuote: qData.quote,
                     usedIndexes: [...(data.usedIndexes || []), qData.index],
-                    currentTeam: 1, // T1 always starts
+                    currentTeam: 1,
                     t1Score: 0, t2Score: 0, t1Correct: 0, t2Correct: 0,
                     winner: null
                 });
@@ -514,7 +698,7 @@
             let yearDecade = false;
 
             if(!isSkip) {
-                // Evaluate
+                // Forgiving Matcher
                 const cleanIn = sInput.toLowerCase().replace(/[^a-z0-9]/g, '');
                 const cleanAct = data.currentQuote.s.toLowerCase().replace(/[^a-z0-9]/g, '');
                 if(cleanIn.length >= 3 && (cleanAct.includes(cleanIn) || cleanIn.includes(cleanAct))) {
@@ -543,7 +727,7 @@
                 if(sourceCorrect) updates.t2Correct = data.t2Correct + 1;
             }
 
-            // Check Win Condition
+            // Win Condition (Race to 5 correct)
             const updatedT1C = updates.t1Correct !== undefined ? updates.t1Correct : data.t1Correct;
             const updatedT2C = updates.t2Correct !== undefined ? updates.t2Correct : data.t2Correct;
             
@@ -580,7 +764,6 @@
             });
         };
 
-        
         function attachGameListener(code) {
             if(unsubscribe) unsubscribe();
             
@@ -600,20 +783,17 @@
         function syncUI(data) {
             const myPlayer = data.players[currentUser.uid] || { team: 0 };
             
-            // Common Syncs
             updateScoreboardsUI(data);
 
             if(data.phase === 'lobby') {
                 showScreen('lobby-screen');
                 document.getElementById('lobby-code').innerText = currentGameCode;
                 
-                // Inputs vs Text based on Host
                 document.getElementById('lobby-t1-name').readOnly = !isHost;
                 document.getElementById('lobby-t2-name').readOnly = !isHost;
                 document.getElementById('lobby-t1-name').value = data.t1Name;
                 document.getElementById('lobby-t2-name').value = data.t2Name;
                 
-                // Populate Players
                 let t1html = '', t2html = '', t1c = 0, t2c = 0;
                 Object.values(data.players).forEach(p => {
                     const badge = `<div class="bg-gray-800 rounded px-3 py-2 text-sm font-medium border border-gray-700">${p.name}</div>`;
@@ -637,14 +817,12 @@
                 showScreen('game-screen');
                 document.getElementById('game-quote-text').innerText = data.currentQuote.q;
                 
-                // Clear inputs
                 document.getElementById('source-input').value = "";
                 document.getElementById('year-input').value = "";
                 
                 if(myPlayer.team === data.currentTeam) {
                     document.getElementById('active-play-area').classList.remove('hidden');
                     document.getElementById('waiting-play-area').classList.add('hidden');
-                    // auto focus
                     setTimeout(() => document.getElementById('source-input').focus(), 100);
                 } else {
                     document.getElementById('active-play-area').classList.add('hidden');
@@ -717,7 +895,6 @@
         }
 
         function updateScoreboardsUI(data) {
-            // Update names and scores
             ['game-t1-name', 'game-t1-score', 'game-t2-name', 'game-t2-score'].forEach(id => {
                 const el = document.getElementById(id);
                 if(id.includes('t1-name')) el.innerText = data.t1Name;
@@ -726,7 +903,7 @@
                 if(id.includes('t2-score')) el.innerText = data.t2Score;
             });
 
-            // Dots generator
+            // 5 Dots logic for Win Condition
             const getDots = (correct, colorClass, glowClass) => Array(5).fill(0).map((_, i) => 
                 `<div class="w-3 h-3 md:w-4 md:h-4 rounded-full ${i < correct ? `${colorClass} ${glowClass}` : 'bg-gray-700 border border-gray-600'}"></div>`
             ).join('');
@@ -734,7 +911,6 @@
             document.getElementById('game-t1-dots').innerHTML = getDots(data.t1Correct, 'bg-cyan-400', 'shadow-[0_0_8px_rgba(34,211,238,0.8)]');
             document.getElementById('game-t2-dots').innerHTML = getDots(data.t2Correct, 'bg-purple-400', 'shadow-[0_0_8px_rgba(192,132,252,0.8)]');
 
-            // Turn Highlighting
             const b1 = document.getElementById('board-t1');
             const b2 = document.getElementById('board-t2');
             const badge = document.getElementById('turn-badge');
@@ -752,12 +928,11 @@
             }
         }
 
-        // Enter key bindings
+        // Enter key listeners
         document.getElementById('source-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitTurn(); });
         document.getElementById('year-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitTurn(); });
         document.getElementById('join-code').addEventListener('keypress', e => { if (e.key === 'Enter') joinGame(); });
 
-        // Run Auth Sequence on load
         window.onload = initAuth;
 
     </script>
