@@ -3,38 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Can I Quote You On That? - Versus Edition</title>
+    <title>Can I Quote You On That? - Multiplayer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .slide-up { animation: slideUp 0.4s ease-out forwards; }
+        .pulse-soft { animation: pulseSoft 2s infinite; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseSoft { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+        .glass-panel { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-white">
+<body class="bg-slate-900 text-white min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-white relative">
+    
+    <!-- Background Elements -->
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <div class="flex-grow flex flex-col max-w-5xl w-full mx-auto p-4 md:p-8 relative">
-        
-        <!-- SETUP SCREEN -->
-        <div id="setup-screen" class="flex flex-col h-[80vh] items-center justify-center fade-in">
+    <div class="flex-grow flex flex-col max-w-5xl w-full mx-auto p-4 md:p-8 relative z-10">
+
+        <!-- AUTH/LOADING SCREEN -->
+        <div id="auth-screen" class="flex flex-col h-[80vh] items-center justify-center fade-in">
+            <div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <h2 class="text-2xl font-bold text-cyan-400 animate-pulse">Connecting to Network...</h2>
+        </div>
+
+        <!-- MAIN MENU -->
+        <div id="menu-screen" class="hidden flex-col h-[80vh] items-center justify-center fade-in">
             <div class="mb-10 text-center">
                 <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-4 tracking-tight drop-shadow-lg">Can I Quote You On That?</h1>
-                <p class="text-2xl text-gray-300 font-medium">Versus Edition • First to 5 Quotes Wins</p>
+                <p class="text-2xl text-gray-300 font-medium">Realtime Versus Edition</p>
             </div>
             
-            <div class="bg-gray-800/80 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
+            <div class="glass-panel p-8 rounded-2xl shadow-2xl w-full max-w-md">
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-cyan-400 font-bold mb-2 uppercase tracking-wide text-sm">Team 1 Name</label>
-                        <input type="text" id="t1-name" value="Team 1" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors shadow-inner">
+                        <label class="block text-gray-300 font-bold mb-2 uppercase tracking-wide text-sm">Your Name</label>
+                        <input type="text" id="player-name" placeholder="Enter your alias" class="w-full bg-gray-900 border border-gray-600 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-cyan-500 transition-colors shadow-inner text-center">
                     </div>
-                    <div>
-                        <label class="block text-purple-400 font-bold mb-2 uppercase tracking-wide text-sm">Team 2 Name</label>
-                        <input type="text" id="t2-name" value="Team 2" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors shadow-inner">
+                    
+                    <button onclick="createGame()" class="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-transform hover:scale-[1.02] text-xl uppercase tracking-wider">Host New Game</button>
+                    
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-600"></div>
+                        <span class="flex-shrink-0 mx-4 text-gray-400 font-bold uppercase text-sm">Or</span>
+                        <div class="flex-grow border-t border-gray-600"></div>
                     </div>
-                    <button onclick="startGame()" class="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-transform hover:scale-[1.02] text-xl mt-6 uppercase tracking-wider">Start Match</button>
+
+                    <div class="flex gap-2">
+                        <input type="text" id="join-code" placeholder="4-LETTER CODE" maxlength="4" class="w-2/3 bg-gray-900 border border-gray-600 rounded-xl p-4 text-white text-xl font-mono uppercase focus:outline-none focus:border-purple-500 text-center shadow-inner">
+                        <button onclick="joinGame()" class="w-1/3 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 rounded-xl transition-all active:scale-95 uppercase">Join</button>
+                    </div>
+                    <p id="menu-error" class="text-red-400 text-sm font-bold text-center hidden"></p>
                 </div>
+            </div>
+        </div>
+
+        <!-- LOBBY SCREEN -->
+        <div id="lobby-screen" class="hidden flex-col h-full fade-in pb-10">
+            <div class="text-center mb-8 pt-4">
+                <p class="text-gray-400 font-bold uppercase tracking-widest text-sm mb-2">Room Code</p>
+                <h2 class="text-6xl font-mono font-black text-cyan-400 tracking-[0.2em]" id="lobby-code">ABCD</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
+                <!-- Team 1 -->
+                <div class="glass-panel p-6 rounded-3xl border-t-4 border-cyan-500 flex flex-col h-[400px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <input type="text" id="lobby-t1-name" class="bg-transparent border-b border-dashed border-gray-500 text-2xl font-black text-cyan-400 focus:outline-none focus:border-cyan-400 w-2/3" value="Team 1" onchange="updateTeamName(1, this.value)" readonly>
+                        <span class="text-gray-500 text-sm font-bold" id="t1-count">0 Players</span>
+                    </div>
+                    <button onclick="joinTeam(1)" class="w-full bg-cyan-900/50 hover:bg-cyan-800 border border-cyan-700 text-cyan-100 font-bold py-3 rounded-xl mb-4 transition-colors">Join Team 1</button>
+                    <div id="t1-players" class="flex-grow overflow-y-auto space-y-2"></div>
+                </div>
+
+                <!-- Team 2 -->
+                <div class="glass-panel p-6 rounded-3xl border-t-4 border-purple-500 flex flex-col h-[400px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <input type="text" id="lobby-t2-name" class="bg-transparent border-b border-dashed border-gray-500 text-2xl font-black text-purple-400 focus:outline-none focus:border-purple-400 w-2/3" value="Team 2" onchange="updateTeamName(2, this.value)" readonly>
+                        <span class="text-gray-500 text-sm font-bold" id="t2-count">0 Players</span>
+                    </div>
+                    <button onclick="joinTeam(2)" class="w-full bg-purple-900/50 hover:bg-purple-800 border border-purple-700 text-purple-100 font-bold py-3 rounded-xl mb-4 transition-colors">Join Team 2</button>
+                    <div id="t2-players" class="flex-grow overflow-y-auto space-y-2"></div>
+                </div>
+            </div>
+
+            <div class="mt-10 text-center w-full max-w-4xl mx-auto" id="host-controls">
+                <button onclick="startMatch()" class="w-full md:w-1/2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-black py-5 rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.5)] transition-transform hover:scale-105 active:scale-95 text-2xl uppercase tracking-widest hidden" id="btn-start-match">Start Match</button>
+                <p id="waiting-host-msg" class="text-gray-400 font-bold uppercase tracking-widest pulse-soft mt-4">Waiting for host to start...</p>
             </div>
         </div>
 
@@ -43,559 +103,662 @@
             <!-- Scoreboards -->
             <div class="grid grid-cols-2 gap-4 md:gap-8 mb-8">
                 <!-- Team 1 Board -->
-                <div class="flex justify-between items-center bg-gray-800/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-transparent transition-all duration-300" id="team-1-board">
+                <div class="flex justify-between items-center glass-panel rounded-2xl p-4 md:p-5 shadow-lg border-2 transition-all duration-300" id="board-t1">
                     <div>
-                        <h2 class="text-xl md:text-2xl font-black text-cyan-400" id="t1-name-display">Team 1</h2>
-                        <p class="text-gray-400 font-medium">Score: <span id="t1-score" class="text-white font-mono text-xl">0</span></p>
+                        <h2 class="text-lg md:text-2xl font-black text-cyan-400 truncate w-24 md:w-40" id="game-t1-name">Team 1</h2>
+                        <p class="text-gray-400 font-medium text-sm md:text-base">Score: <span id="game-t1-score" class="text-white font-mono text-lg md:text-xl">0</span></p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Quotes Won</p>
-                        <div class="flex gap-1.5" id="t1-dots"></div>
+                        <p class="text-[10px] md:text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Quotes Won</p>
+                        <div class="flex gap-1 md:gap-1.5" id="game-t1-dots"></div>
                     </div>
                 </div>
                 
                 <!-- Team 2 Board -->
-                <div class="flex justify-between items-center bg-gray-800/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-transparent transition-all duration-300" id="team-2-board">
-                    <div class="text-left">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Quotes Won</p>
-                        <div class="flex gap-1.5" id="t2-dots"></div>
+                <div class="flex justify-between items-center glass-panel rounded-2xl p-4 md:p-5 shadow-lg border-2 transition-all duration-300" id="board-t2">
+                    <div class="text-left hidden md:block">
+                        <p class="text-[10px] md:text-xs text-gray-400 uppercase tracking-wider mb-1 font-bold">Quotes Won</p>
+                        <div class="flex gap-1 md:gap-1.5" id="game-t2-dots"></div>
                     </div>
-                    <div class="text-right">
-                        <h2 class="text-xl md:text-2xl font-black text-purple-400" id="t2-name-display">Team 2</h2>
-                        <p class="text-gray-400 font-medium">Score: <span id="t2-score" class="text-white font-mono text-xl">0</span></p>
+                    <div class="text-right w-full md:w-auto">
+                        <h2 class="text-lg md:text-2xl font-black text-purple-400 truncate w-full md:w-40" id="game-t2-name">Team 2</h2>
+                        <p class="text-gray-400 font-medium text-sm md:text-base">Score: <span id="game-t2-score" class="text-white font-mono text-lg md:text-xl">0</span></p>
                     </div>
                 </div>
             </div>
             
             <!-- Turn Indicator -->
-            <div class="text-center mb-6">
-                <span class="px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest transition-colors duration-300" id="current-turn-badge">Team 1's Turn</span>
+            <div class="text-center mb-6 h-10">
+                <span class="px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest transition-colors duration-300 inline-block" id="turn-badge">Team's Turn</span>
             </div>
 
             <!-- Quote Display -->
-            <div class="flex-grow flex items-center justify-center min-h-[30vh] mb-8 bg-gray-800/30 rounded-3xl p-8 border border-gray-700/50 shadow-inner">
-                <blockquote class="text-3xl md:text-5xl lg:text-6xl font-serif italic text-center text-gray-100 leading-tight drop-shadow-md">
-                    "<span id="quote-text">...</span>"
+            <div class="flex-grow flex items-center justify-center min-h-[30vh] mb-8 bg-gray-900/60 rounded-3xl p-6 md:p-10 border border-gray-700/50 shadow-inner relative overflow-hidden">
+                <i class="fa-solid fa-quote-left absolute top-4 left-6 text-6xl text-gray-700/30"></i>
+                <blockquote class="text-2xl md:text-4xl lg:text-5xl font-serif italic text-center text-white leading-tight drop-shadow-md z-10" id="game-quote-text">
+                    "Loading..."
                 </blockquote>
             </div>
             
-            <!-- Inputs -->
-            <div class="space-y-4 max-w-2xl w-full mx-auto pb-8">
-                <input type="text" id="source-input" placeholder="Who said it? (Character, Actor, or Movie/Show)" class="w-full bg-gray-800 border border-gray-600 rounded-xl p-5 text-white text-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 transition-colors placeholder-gray-500 shadow-inner">
+            <!-- Inputs Phase -->
+            <div id="active-play-area" class="space-y-4 max-w-2xl w-full mx-auto pb-8 hidden slide-up">
+                <input type="text" id="source-input" placeholder="Who said it? (Character, Actor, or Movie/Show)" class="w-full bg-gray-800 border border-gray-600 rounded-xl p-5 text-white text-lg md:text-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 transition-colors shadow-inner">
                 
-                <input type="number" id="year-input" placeholder="Exact Year (Optional Bonus Points)" class="w-full bg-gray-800 border border-gray-600 rounded-xl p-5 text-white text-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 transition-colors placeholder-gray-500 shadow-inner">
+                <input type="number" id="year-input" placeholder="Exact Year (Optional Bonus)" class="w-full bg-gray-800 border border-gray-600 rounded-xl p-5 text-white text-lg md:text-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 transition-colors shadow-inner">
                 
-                <div class="flex gap-4 pt-4">
-                    <button onclick="submitAnswer()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-black py-5 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all active:scale-95 text-xl uppercase tracking-wider">Submit Analysis</button>
-                    <button onclick="skipAnswer()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-5 px-8 rounded-xl transition-all active:scale-95 text-xl uppercase tracking-wider border border-gray-600">Skip</button>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="submitTurn()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all active:scale-95 text-lg uppercase tracking-wider">Submit</button>
+                    <button onclick="skipTurn()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl transition-all active:scale-95 text-lg uppercase tracking-wider border border-gray-600">Skip</button>
                 </div>
+            </div>
+
+            <!-- Waiting Phase -->
+            <div id="waiting-play-area" class="flex flex-col items-center justify-center pb-12 hidden fade-in">
+                <div class="w-12 h-12 border-4 border-gray-500 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+                <h3 class="text-xl text-gray-400 font-bold tracking-widest uppercase text-center" id="waiting-turn-text">Waiting for Team...</h3>
             </div>
         </div>
 
         <!-- FEEDBACK SCREEN -->
-        <div id="feedback-screen" class="hidden flex-col h-[80vh] items-center justify-center text-center">
-            <h2 id="feedback-status" class="text-5xl md:text-7xl font-black mb-4 uppercase tracking-tight">STATUS</h2>
+        <div id="feedback-screen" class="hidden flex-col h-full items-center justify-center text-center py-10">
+            <h2 id="fb-status-title" class="text-5xl md:text-7xl font-black mb-4 uppercase tracking-tight">STATUS</h2>
+            <p id="fb-action-desc" class="text-gray-300 font-medium mb-6 text-lg"></p>
             
-            <div class="bg-gray-800/90 backdrop-blur border border-gray-700 p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-8">
+            <div class="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4" id="fb-card">
                 <p class="text-gray-400 uppercase tracking-widest text-sm font-bold mb-4">The Quote Was</p>
-                <p id="fb-correct-quote" class="text-2xl md:text-3xl font-serif italic text-white mb-8 leading-relaxed">"Quote"</p>
+                <p id="fb-actual-quote" class="text-xl md:text-2xl font-serif italic text-white mb-8 leading-relaxed">"Quote"</p>
                 
                 <p class="text-gray-400 uppercase tracking-widest text-sm font-bold mb-2">Attributed To</p>
-                <p id="fb-correct-source" class="text-3xl md:text-4xl font-black text-cyan-400 drop-shadow-md">Source (Year)</p>
+                <p id="fb-actual-source" class="text-2xl md:text-4xl font-black text-cyan-400 drop-shadow-md mb-2">Source</p>
+                <p id="fb-actual-year" class="text-xl font-mono text-purple-400 font-bold mb-6">Year</p>
+
+                <div class="bg-gray-900/50 py-4 px-6 rounded-xl border border-gray-700 inline-block">
+                    <p class="text-gray-400 uppercase tracking-widest text-xs font-bold mb-1">Round Results</p>
+                    <p id="fb-points-earned" class="text-xl font-mono text-yellow-400 font-bold">+Points</p>
+                </div>
             </div>
             
-            <div class="mb-10">
-                <p class="text-gray-400 uppercase tracking-widest text-sm font-bold mb-2">Round Results</p>
-                <p id="fb-points" class="text-2xl font-mono text-yellow-400 font-bold bg-gray-800 py-3 px-6 rounded-xl border border-yellow-500/30 shadow-inner">+Points</p>
+            <div class="mt-8 h-20 flex items-center justify-center w-full">
+                <button id="btn-next-turn" onclick="triggerNextTurn()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-12 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-transform hover:scale-105 active:scale-95 text-xl uppercase tracking-widest hidden">Next Turn ➔</button>
+                <p id="fb-waiting-host" class="text-gray-500 font-bold uppercase tracking-widest pulse-soft hidden">Waiting for host...</p>
             </div>
-            
-            <button id="fb-next-btn" onclick="nextTurn()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-5 px-16 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-transform hover:scale-105 active:scale-95 text-xl uppercase tracking-widest">Next Turn ➔</button>
         </div>
 
         <!-- WIN SCREEN -->
-        <div id="win-screen" class="hidden flex-col h-[80vh] items-center justify-center text-center">
-            <h1 class="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 mb-2 animate-bounce drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]" id="winner-name">Team Wins!</h1>
-            <p class="text-2xl md:text-3xl text-gray-300 mb-12 font-medium">First to 5 Quotes Correct!</p>
+        <div id="win-screen" class="hidden flex-col h-full items-center justify-center text-center py-10">
+            <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 mb-2 animate-bounce drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]" id="win-title">Team Wins!</h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-12 font-medium">First to 5 Quotes Correct</p>
             
-            <div class="flex flex-col md:flex-row gap-6 md:gap-12 mb-16 w-full max-w-3xl justify-center">
+            <div class="flex flex-col md:flex-row gap-6 md:gap-10 mb-12 w-full max-w-4xl justify-center">
                 <!-- Final Stats T1 -->
-                <div class="bg-gray-800/80 p-8 rounded-3xl border-2 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.2)] w-full md:w-1/2 relative overflow-hidden">
+                <div class="glass-panel p-8 rounded-3xl border-2 border-cyan-500 w-full md:w-1/2 relative overflow-hidden" id="win-card-t1">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-bl-full -z-10"></div>
-                    <h3 class="font-black text-cyan-400 text-2xl uppercase tracking-wider" id="win-t1-name">Team 1</h3>
-                    <p class="text-5xl font-mono mt-4 text-white font-bold" id="win-t1-score">0 <span class="text-2xl text-gray-400">pts</span></p>
-                    <div class="mt-4 inline-block bg-gray-900 px-4 py-2 rounded-lg border border-gray-700">
-                        <p class="text-lg text-cyan-300 font-bold" id="win-t1-correct">0/5 Quotes Won</p>
+                    <h3 class="font-black text-cyan-400 text-2xl uppercase tracking-wider" id="win-name-t1">Team 1</h3>
+                    <p class="text-5xl font-mono mt-4 text-white font-bold" id="win-score-t1">0 <span class="text-xl text-gray-400">pts</span></p>
+                    <div class="mt-4 bg-gray-900/80 px-4 py-2 rounded-lg border border-gray-700 inline-block">
+                        <p class="text-sm font-bold text-gray-300"><span id="win-correct-t1" class="text-cyan-400 text-lg">0</span>/5 Quotes Won</p>
                     </div>
                 </div>
                 <!-- Final Stats T2 -->
-                <div class="bg-gray-800/80 p-8 rounded-3xl border-2 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] w-full md:w-1/2 relative overflow-hidden">
+                <div class="glass-panel p-8 rounded-3xl border-2 border-purple-500 w-full md:w-1/2 relative overflow-hidden" id="win-card-t2">
                     <div class="absolute top-0 left-0 w-32 h-32 bg-purple-500/10 rounded-br-full -z-10"></div>
-                    <h3 class="font-black text-purple-400 text-2xl uppercase tracking-wider" id="win-t2-name">Team 2</h3>
-                    <p class="text-5xl font-mono mt-4 text-white font-bold" id="win-t2-score">0 <span class="text-2xl text-gray-400">pts</span></p>
-                    <div class="mt-4 inline-block bg-gray-900 px-4 py-2 rounded-lg border border-gray-700">
-                        <p class="text-lg text-purple-300 font-bold" id="win-t2-correct">0/5 Quotes Won</p>
+                    <h3 class="font-black text-purple-400 text-2xl uppercase tracking-wider" id="win-name-t2">Team 2</h3>
+                    <p class="text-5xl font-mono mt-4 text-white font-bold" id="win-score-t2">0 <span class="text-xl text-gray-400">pts</span></p>
+                    <div class="mt-4 bg-gray-900/80 px-4 py-2 rounded-lg border border-gray-700 inline-block">
+                        <p class="text-sm font-bold text-gray-300"><span id="win-correct-t2" class="text-purple-400 text-lg">0</span>/5 Quotes Won</p>
                     </div>
                 </div>
             </div>
             
-            <button onclick="document.location.reload()" class="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white font-black py-5 px-16 rounded-full shadow-2xl transition-transform hover:scale-105 active:scale-95 text-xl uppercase tracking-widest border border-gray-500">Play Again</button>
+            <div id="win-host-controls" class="hidden">
+                <button onclick="resetToLobby()" class="bg-gray-700 hover:bg-gray-600 text-white font-black py-4 px-10 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 text-lg uppercase tracking-widest border border-gray-500">Return to Lobby</button>
+            </div>
+            <p id="win-waiting-msg" class="text-gray-500 font-bold uppercase tracking-widest hidden pulse-soft">Waiting for host to reset...</p>
         </div>
 
     </div>
 
-    <script>
-        // --- DATASET: 250 Curated Quotes ---
-        const rawQuotes = [
-            // 90s & 00s Comedies
-            ["So you're telling me there's a chance...", "Lloyd Christmas - Dumb and Dumber", 1994],
-            ["Ugh, as if!", "Cher Horowitz - Clueless", 1995],
-            ["Alrighty then!", "Ace Ventura - Pet Detective", 1994],
-            ["Smokin'!", "Stanley Ipkiss - The Mask", 1994],
-            ["Schwing!", "Wayne Campbell - Wayne's World", 1992],
-            ["Fat guy in a little coat.", "Tommy Callahan - Tommy Boy", 1995],
-            ["The price is wrong, bitch!", "Happy Gilmore", 1996],
-            ["Stop looking at me, swan!", "Billy Madison", 1995],
-            ["Yeah, I'm gonna need you to go ahead and come in on Saturday.", "Bill Lumbergh - Office Space", 1999],
-            ["Two yutes.", "Vincent Gambini - My Cousin Vinny", 1992],
-            ["It was a run-by fruiting!", "Daniel Hillard - Mrs. Doubtfire", 1993],
-            ["Don't drive angry!", "Phil Connors - Groundhog Day", 1993],
-            ["Alright, alright, alright.", "David Wooderson - Dazed and Confused", 1993],
-            ["Yeah, well, you know, that's just, like, your opinion, man.", "The Dude - The Big Lebowski", 1998],
-            ["I'm in a glass case of emotion!", "Ron Burgundy - Anchorman", 2004],
-            ["I love lamp.", "Brick Tamland - Anchorman", 2004],
-            ["Get in loser, we're going shopping.", "Regina George - Mean Girls", 2004],
-            ["She doesn't even go here!", "Damian Leigh - Mean Girls", 2004],
-            ["What, like it's hard?", "Elle Woods - Legally Blonde", 2001],
-            ["I am McLovin.", "Fogell - Superbad", 2007],
-            ["What is this? A center for ants?!", "Derek Zoolander - Zoolander", 2001],
-            ["You sit on a throne of lies!", "Buddy - Elf", 2003],
-            ["I have a nipple, Focker, can you milk me?", "Jack Byrnes - Meet the Parents", 2000],
-            ["Gosh, idiot!", "Napoleon Dynamite", 2004],
-            ["You're my boy, Blue!", "Frank Ricard - Old School", 2003],
-            ["Ma! The meatloaf! Fuck!", "Chazz Reinhold - Wedding Crashers", 2005],
-            ["Kelly Clarkson!", "Andy Stitzer - The 40-Year-Old Virgin", 2005],
-            ["Great success!", "Borat Sagdiyev - Borat", 2006],
-            ["Ogres are like onions.", "Shrek", 2001],
-            ["You've got red on you.", "Shaun - Shaun of the Dead", 2004],
-            ["The greater good.", "Sandford Town Council - Hot Fuzz", 2007],
-            ["I don't read the script. The script reads me.", "Kirk Lazarus - Tropic Thunder", 2008],
-            ["Boats 'N Hoes!", "Brennan & Dale - Step Brothers", 2008],
-            ["If you ain't first, you're last.", "Ricky Bobby - Talladega Nights", 2006],
-            ["McLovin? What kind of a stupid name is that, Fogell?", "Officer Michaels - Superbad", 2007],
-            ["Bye Buddy, hope you find your dad.", "Mr. Narwhal - Elf", 2003],
-            ["Do you like Huey Lewis and the News?", "Patrick Bateman - American Psycho", 2000],
-            // 90s & 00s Action/Drama/Sci-Fi
-            ["Welcome to Earth.", "Capt. Steven Hiller - Independence Day", 1996],
-            ["There is no spoon.", "Spoon Boy - The Matrix", 1999],
-            ["The first rule of Fight Club is: You do not talk about Fight Club.", "Tyler Durden - Fight Club", 1999],
-            ["I see dead people.", "Cole Sear - The Sixth Sense", 1999],
-            ["You complete me.", "Jerry Maguire", 1996],
-            ["Show me the money!", "Rod Tidwell - Jerry Maguire", 1996],
-            ["Do you understand the words that are coming out of my mouth?", "Detective Carter - Rush Hour", 1998],
-            ["I'm just a girl, standing in front of a boy, asking him to love her.", "Anna Scott - Notting Hill", 1999],
-            ["Keep the change, ya filthy animal.", "Gangster on TV - Home Alone", 1990],
-            ["You make me want to be a better man.", "Melvin Udall - As Good as It Gets", 1997],
-            ["You are a sad, strange little man.", "Buzz Lightyear - Toy Story", 1995],
-            ["Life was like a box of chocolates. You never know what you're gonna get.", "Forrest Gump", 1994],
-            ["You either die a hero, or you live long enough to see yourself become the villain.", "Harvey Dent - The Dark Knight", 2008],
-            ["Why so serious?", "The Joker - The Dark Knight", 2008],
-            ["I will find you, and I will kill you.", "Bryan Mills - Taken", 2008],
-            ["Are you not entertained?!", "Maximus - Gladiator", 2000],
-            ["I drink your milkshake! I drink it up!", "Daniel Plainview - There Will Be Blood", 2007],
-            ["This is Sparta!", "King Leonidas - 300", 2006],
-            ["Just keep swimming.", "Dory - Finding Nemo", 2003],
-            ["I am a golden god!", "Russell Hammond - Almost Famous", 2000],
-            ["I wish I knew how to quit you.", "Jack Twist - Brokeback Mountain", 2005],
-            ["To infinity and beyond!", "Buzz Lightyear - Toy Story", 1995],
-            ["I'm the king of the world!", "Jack Dawson - Titanic", 1997],
-            ["My precious.", "Gollum - The Lord of the Rings: The Two Towers", 2002],
-            ["You shall not pass!", "Gandalf - The Lord of the Rings: The Fellowship of the Ring", 2001],
-            ["With great power comes great responsibility.", "Uncle Ben - Spider-Man", 2002],
-            ["I volunteer as tribute!", "Katniss Everdeen - The Hunger Games", 2012],
-            ["Wakanda Forever!", "T'Challa - Black Panther", 2018],
-            ["I am Iron Man.", "Tony Stark - Iron Man", 2008],
-            ["Some motherfuckers are always trying to ice skate uphill.", "Blade", 1998],
-            ["What's in the box?!", "Detective Mills - Se7en", 1995],
-            ["Houston, we have a problem.", "Jim Lovell - Apollo 13", 1995],
-            ["That'll do, pig. That'll do.", "Arthur Hoggett - Babe", 1995],
-            ["You're killing me, Smalls!", "Ham Porter - The Sandlot", 1993],
-            ["For ev vver.", "Squints - The Sandlot", 1993],
-            // Television (90s, 00s & Golden Age)
-            ["These pretzels are making me thirsty!", "Cosmo Kramer - Seinfeld", 1991],
-            ["Hello, Newman.", "Jerry Seinfeld - Seinfeld", 1992],
-            ["Master of my domain.", "Jerry Seinfeld - Seinfeld", 1992],
-            ["No soup for you!", "The Soup Nazi - Seinfeld", 1995],
-            ["Yada, yada, yada.", "Seinfeld", 1997],
-            ["He's her lobster!", "Phoebe Buffay - Friends", 1996],
-            ["Smelly cat, smelly cat, what are they feeding you?", "Phoebe Buffay - Friends", 1995],
-            ["Could I *be* wearing any more clothes?", "Joey Tribbiani - Friends", 1996],
-            ["We were on a break!", "Ross Geller - Friends", 1997],
-            ["Pivot!", "Ross Geller - Friends", 1999],
-            ["I'm listening.", "Dr. Frasier Crane - Frasier", 1993],
-            ["The truth is out there.", "Tagline - The X-Files", 1993],
-            ["Trust no one.", "Deep Throat - The X-Files", 1993],
-            ["Have mercy!", "Uncle Jesse - Full House", 1990],
-            ["How rude!", "Stephanie Tanner - Full House", 1990],
-            ["You got it, dude.", "Michelle Tanner - Full House", 1990],
-            ["Eat my shorts.", "Bart Simpson - The Simpsons", 1990],
-            ["Excellent.", "Mr. Burns - The Simpsons", 1990],
-            ["D'oh!", "Homer Simpson - The Simpsons", 1989],
-            ["Screw you guys, I'm going home!", "Eric Cartman - South Park", 1997],
-            ["Respect my authoritah!", "Eric Cartman - South Park", 1998],
-            ["Oh my god, they killed Kenny!", "Stan Marsh - South Park", 1997],
-            ["M'kay.", "Mr. Mackey - South Park", 1997],
-            ["Good news, everyone!", "Professor Farnsworth - Futurama", 1999],
-            ["I'm the baby, gotta love me!", "Baby Sinclair - Dinosaurs", 1991],
-            ["Talk to the hand, 'cause the face ain't listening!", "Fran Fine - The Nanny", 1993],
-            ["Who loves orange soda?", "Kel Kimble - Kenan & Kel", 1996],
-            ["Let's get dangerous.", "Drake Mallard - Darkwing Duck", 1991],
-            ["It's a Festivus for the rest of us!", "Frank Costanza - Seinfeld", 1997],
-            ["Bears, Beets, Battlestar Galactica.", "Jim Halpert - The Office", 2007],
-            ["I'm not superstitious, but I am a little stitious.", "Michael Scott - The Office", 2007],
-            ["That's what she said.", "Michael Scott - The Office", 2005],
-            ["I've made a huge mistake.", "Gob Bluth - Arrested Development", 2003],
-            ["There's always money in the banana stand.", "George Bluth Sr. - Arrested Development", 2003],
-            ["Legen—wait for it—dary!", "Barney Stinson - How I Met Your Mother", 2005],
-            ["Challenge accepted.", "Barney Stinson - How I Met Your Mother", 2005],
-            ["We have to go back!", "Jack Shephard - Lost", 2007],
-            ["Texas forever.", "Tim Riggins - Friday Night Lights", 2006],
-            ["Clear eyes, full hearts, can't lose.", "Coach Taylor - Friday Night Lights", 2006],
-            ["Shiiiiiiiit.", "Senator Clay Davis - The Wire", 2002],
-            ["Omar comin'!", "Street Kids - The Wire", 2002],
-            ["Bazinga!", "Sheldon Cooper - The Big Bang Theory", 2008],
-            ["I know what I'm about, son.", "Ron Swanson - Parks and Recreation", 2009],
-            ["Treat yo self.", "Tom & Donna - Parks and Recreation", 2011],
-            ["I'm Rick James, bitch!", "Dave Chappelle - Chappelle's Show", 2004],
-            ["Truthiness.", "Stephen Colbert - The Colbert Report", 2005],
-            ["It's a beautiful day to save lives.", "Dr. Derek Shepherd - Grey's Anatomy", 2005],
-            ["You get a car! You get a car! Everybody gets a car!", "Oprah Winfrey", 2004],
-            ["I'm not here to make friends.", "Kelly Wiglesworth - Survivor", 2000],
-            ["The tribe has spoken.", "Jeff Probst - Survivor", 2000],
-            ["Please pack your knives and go.", "Padma Lakshmi - Top Chef", 2006],
-            ["You're fired.", "Donald Trump - The Apprentice", 2004],
-            ["Make it work.", "Tim Gunn - Project Runway", 2004],
-            ["Gym, Tan, Laundry.", "Cast - Jersey Shore", 2009],
-            ["Winter is coming.", "Ned Stark - Game of Thrones", 2011],
-            ["You know nothing, Jon Snow.", "Ygritte - Game of Thrones", 2014],
-            ["I am the one who knocks!", "Walter White - Breaking Bad", 2011],
-            ["Yeah, science!", "Jesse Pinkman - Breaking Bad", 2008],
-            ["Don't stop believin'.", "Tony Soprano (Radio) - The Sopranos", 2007],
-            // AFI Top & Classic Cinema
-            ["May the Force be with you.", "Han Solo / General - Star Wars", 1977],
-            ["I am your father.", "Darth Vader - The Empire Strikes Back", 1980],
-            ["Do, or do not. There is no try.", "Yoda - The Empire Strikes Back", 1980],
-            ["I'll be back.", "The Terminator", 1984],
-            ["Come with me if you want to live.", "Kyle Reese - The Terminator", 1984],
-            ["Hasta la vista, baby.", "The Terminator - Terminator 2 Judgment Day", 1991],
-            ["You're gonna need a bigger boat.", "Chief Brody - Jaws", 1975],
-            ["I'm gonna make him an offer he can't refuse.", "Don Corleone - The Godfather", 1972],
-            ["Keep your friends close, but your enemies closer.", "Michael Corleone - The Godfather Part II", 1974],
-            ["Here's Johnny!", "Jack Torrance - The Shining", 1980],
-            ["I love the smell of napalm in the morning.", "Lt. Col. Bill Kilgore - Apocalypse Now", 1979],
-            ["Say hello to my little friend!", "Tony Montana - Scarface", 1983],
-            ["E.T. phone home.", "E.T. the Extra-Terrestrial", 1982],
-            ["Goonies never say die!", "Mikey - The Goonies", 1985],
-            ["Who you gonna call?", "Ray Parker Jr. / Tagline - Ghostbusters", 1984],
-            ["I feel the need - the need for speed!", "Maverick & Goose - Top Gun", 1986],
-            ["Roads? Where we're going we don't need roads.", "Doc Brown - Back to the Future", 1985],
-            ["Great Scott!", "Doc Brown - Back to the Future", 1985],
-            ["Nobody puts Baby in a corner.", "Johnny Castle - Dirty Dancing", 1987],
-            ["I carried a watermelon.", "Baby Houseman - Dirty Dancing", 1987],
-            ["Yippee-ki-yay, motherf***er.", "John McClane - Die Hard", 1988],
-            ["Bueller... Bueller... Bueller...", "Economics Teacher - Ferris Bueller's Day Off", 1986],
-            ["Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.", "Ferris Bueller", 1986],
-            ["Inconceivable!", "Vizzini - The Princess Bride", 1987],
-            ["Hello. My name is Inigo Montoya. You killed my father. Prepare to die.", "Inigo Montoya - The Princess Bride", 1987],
-            ["As you wish.", "Westley - The Princess Bride", 1987],
-            ["Wax on, wax off.", "Mr. Miyagi - The Karate Kid", 1984],
-            ["Sweep the leg.", "John Kreese - The Karate Kid", 1984],
-            ["I am serious, and don't call me Shirley.", "Dr. Rumack - Airplane!", 1980],
-            ["Looks like I picked the wrong week to quit sniffing glue.", "Steve McCroskey - Airplane!", 1980],
-            ["Tears in rain.", "Roy Batty - Blade Runner", 1982],
-            ["Sloth love Chunk!", "Sloth - The Goonies", 1985],
-            ["You can't handle the truth!", "Col. Jessep - A Few Good Men", 1992],
-            ["I'll have what she's having.", "Customer - When Harry Met Sally", 1989],
-            ["Carpe diem. Seize the day, boys. Make your lives extraordinary.", "John Keating - Dead Poets Society", 1989],
-            ["O Captain! My Captain!", "Students - Dead Poets Society", 1989],
-            ["If you build it, he will come.", "The Voice - Field of Dreams", 1989],
-            ["There's no crying in baseball!", "Jimmy Dugan - A League of Their Own", 1992],
-            ["Greed, for lack of a better word, is good.", "Gordon Gekko - Wall Street", 1987],
-            ["Snap out of it!", "Loretta Castorini - Moonstruck", 1987],
-            ["You talkin' to me?", "Travis Bickle - Taxi Driver", 1976],
-            ["Adrian!", "Rocky Balboa - Rocky", 1976],
-            ["If he dies, he dies.", "Ivan Drago - Rocky IV", 1985],
-            ["Frankly, my dear, I don't give a damn.", "Rhett Butler - Gone with the Wind", 1939],
-            ["Toto, I've a feeling we're not in Kansas anymore.", "Dorothy Gale - The Wizard of Oz", 1939],
-            ["There's no place like home.", "Dorothy Gale - The Wizard of Oz", 1939],
-            ["I'll get you, my pretty, and your little dog too!", "Wicked Witch of the West - The Wizard of Oz", 1939],
-            ["Here's looking at you, kid.", "Rick Blaine - Casablanca", 1942],
-            ["We'll always have Paris.", "Rick Blaine - Casablanca", 1942],
-            ["Louis, I think this is the beginning of a beautiful friendship.", "Rick Blaine - Casablanca", 1942],
-            ["Play it, Sam. Play 'As Time Goes By.'", "Ilsa Lund - Casablanca", 1942],
-            ["Fasten your seatbelts. It's going to be a bumpy night.", "Margo Channing - All About Eve", 1950],
-            ["What we've got here is failure to communicate.", "Captain - Cool Hand Luke", 1967],
-            ["Love means never having to say you're sorry.", "Jennifer Cavilleri - Love Story", 1970],
-            ["The stuff that dreams are made of.", "Sam Spade - The Maltese Falcon", 1941],
-            ["They call me Mister Tibbs!", "Virgil Tibbs - In the Heat of the Night", 1967],
-            ["Rosebud.", "Charles Foster Kane - Citizen Kane", 1941],
-            ["Made it, Ma! Top of the world!", "Arthur 'Cody' Jarrett - White Heat", 1949],
-            ["I'm as mad as hell, and I'm not going to take this anymore!", "Howard Beale - Network", 1976],
-            ["A boy's best friend is his mother.", "Norman Bates - Psycho", 1960],
-            ["Mrs. Robinson, you're trying to seduce me. Aren't you?", "Benjamin Braddock - The Graduate", 1967],
-            ["Plastics.", "Mr. Maguire - The Graduate", 1967],
-            ["Stella! Hey, Stella!", "Stanley Kowalski - A Streetcar Named Desire", 1951],
-            ["I have always depended on the kindness of strangers.", "Blanche DuBois - A Streetcar Named Desire", 1951],
-            ["It's alive! It's alive!", "Henry Frankenstein - Frankenstein", 1931],
-            ["Get your stinking paws off me, you damned dirty ape.", "George Taylor - Planet of the Apes", 1968],
-            ["Soylent Green is people!", "Det. Robert Thorn - Soylent Green", 1973],
-            ["Open the pod bay doors, HAL.", "Dave Bowman - 2001: A Space Odyssey", 1968],
-            ["I am big! It's the pictures that got small.", "Norma Desmond - Sunset Boulevard", 1950],
-            ["Gentlemen, you can't fight in here! This is the War Room!", "President Merkin Muffley - Dr. Strangelove", 1964],
-            ["Forget it, Jake, it's Chinatown.", "Lawrence Walsh - Chinatown", 1974],
-            ["I coulda been a contender.", "Terry Malloy - On the Waterfront", 1954],
-            // Viral & Modern Pop Culture
-            ["I did not have sexual relations with that woman.", "Bill Clinton", 1998],
-            ["Is this real life?", "David After Dentist", 2009],
-            ["Charlie bit my finger!", "Harry Davies-Carr - Charlie Bit My Finger", 2007],
-            ["Leave Britney alone!", "Chris Crocker", 2007],
-            ["Ain't nobody got time for that!", "Sweet Brown", 2012],
-            ["Hide your kids, hide your wife.", "Antoine Dodson", 2010],
-            ["Cash me outside, how bout dah?", "Danielle Bregoli (Bhad Bhabie)", 2016],
-            ["I'm the captain now.", "Muse - Captain Phillips", 2013],
-            ["That's a bold strategy, Cotton.", "Pepper Brooks - Dodgeball", 2004],
-            ["Nobody makes me bleed my own blood.", "White Goodman - Dodgeball", 2004],
-            ["If you can dodge a wrench, you can dodge a ball.", "Patches O'Houlihan - Dodgeball", 2004],
-            ["I am Groot.", "Groot - Guardians of the Galaxy", 2014],
-            ["I love you 3000.", "Tony Stark / Morgan Stark - Avengers: Endgame", 2019],
-            ["That is America's ass.", "Steve Rogers - Avengers: Endgame", 2019],
-            ["On Wednesdays we wear pink.", "Karen Smith - Mean Girls", 2004],
-            ["You can't sit with us!", "Gretchen Wieners - Mean Girls", 2004],
-            ["Not my tempo.", "Terence Fletcher - Whiplash", 2014],
-            ["What's the most you ever lost on a coin toss?", "Anton Chigurh - No Country for Old Men", 2007],
-            ["Do you want to build a snowman?", "Anna - Frozen", 2013],
-            ["Let it go!", "Elsa - Frozen", 2013],
-            ["Witness me!", "Nux - Mad Max: Fury Road", 2015],
-            ["What a lovely day!", "Nux - Mad Max: Fury Road", 2015],
-            ["I'm Mary Poppins, y'all!", "Yondu - Guardians of the Galaxy Vol 2", 2017],
-            ["Chewie, we're home.", "Han Solo - Star Wars: The Force Awakens", 2015],
-            ["This is the way.", "Din Djarin / The Armorer - The Mandalorian", 2019],
-            ["I have spoken.", "Kuiil - The Mandalorian", 2019],
-            ["Hello there.", "Obi-Wan Kenobi - Star Wars: Revenge of the Sith", 2005],
-            ["I don't like sand.", "Anakin Skywalker - Star Wars: Attack of the Clones", 2002],
-            ["It's over, Anakin! I have the high ground!", "Obi-Wan Kenobi - Star Wars: Revenge of the Sith", 2005],
-            ["I am inevitable.", "Thanos - Avengers: Endgame", 2019],
-            ["And I... am... Iron Man.", "Tony Stark - Avengers: Endgame", 2019],
-            ["Avengers... assemble.", "Steve Rogers - Avengers: Endgame", 2019],
-            ["Puny god.", "The Hulk - The Avengers", 2012],
-            ["That's my secret, Captain. I'm always angry.", "Bruce Banner - The Avengers", 2012],
-            ["Dormammu, I've come to bargain.", "Doctor Strange", 2016],
-            ["We are Groot.", "Groot - Guardians of the Galaxy", 2014],
-            ["He may have been your father, boy, but he wasn't your daddy.", "Yondu - Guardians of the Galaxy Vol 2", 2017],
-            ["Perfectly balanced, as all things should be.", "Thanos - Avengers: Infinity War", 2018],
-            ["Mr. Stark, I don't feel so good.", "Peter Parker - Avengers: Infinity War", 2018],
-            ["Bring me Thanos!", "Thor - Avengers: Infinity War", 2018],
-            ["I'm too old for this shit.", "Roger Murtaugh - Lethal Weapon", 1987],
-            ["My name is Maximus Decimus Meridius.", "Maximus - Gladiator", 2000],
-            ["Smile, you son of a bitch.", "Chief Brody - Jaws", 1975],
-            ["It belongs in a museum!", "Indiana Jones - The Last Crusade", 1989],
-            ["Snakes. Why did it have to be snakes?", "Indiana Jones - Raiders of the Lost Ark", 1981],
-            ["Mischief managed.", "Harry Potter", 2004],
-            ["I solemnly swear that I am up to no good.", "Harry Potter", 2004],
-            ["Yer a wizard, Harry.", "Hagrid - Harry Potter and the Sorcerer's Stone", 2001],
-            ["There is no good and evil, there is only power.", "Lord Voldemort - Harry Potter", 2001],
-            ["Always.", "Severus Snape - Harry Potter and the Deathly Hallows", 2011],
-            ["Dobby is a free elf.", "Dobby - Harry Potter and the Chamber of Secrets", 2002],
-            ["Not my daughter, you bitch!", "Molly Weasley - Harry Potter and the Deathly Hallows", 2011]
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Variables Integration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "dummy", authDomain: "dummy", projectId: "dummy", storageBucket: "dummy", messagingSenderId: "dummy", appId: "dummy"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global State
+        let currentUser = null;
+        let currentGameCode = null;
+        let unsubscribe = null;
+        let isHost = false;
+        let localPlayerName = "";
+        
+        // Strict Path Reference Generator
+        const getGameRef = (code) => doc(db, 'artifacts', appId, 'public', 'data', 'games', code);
+
+        // --- Dataset ---
+        const quotesDB = [
+            {q: "So you're telling me there's a chance...", s: "Lloyd Christmas - Dumb and Dumber", y: 1994},
+            {q: "Ugh, as if!", s: "Cher Horowitz - Clueless", y: 1995},
+            {q: "Alrighty then!", s: "Ace Ventura", y: 1994},
+            {q: "Smokin'!", s: "Stanley Ipkiss - The Mask", y: 1994},
+            {q: "The price is wrong, bitch!", s: "Happy Gilmore", y: 1996},
+            {q: "Yeah, I'm gonna need you to go ahead and come in on Saturday.", s: "Bill Lumbergh - Office Space", y: 1999},
+            {q: "Two yutes.", s: "Vincent Gambini - My Cousin Vinny", y: 1992},
+            {q: "It was a run-by fruiting!", s: "Daniel Hillard - Mrs. Doubtfire", y: 1993},
+            {q: "Don't drive angry!", s: "Phil Connors - Groundhog Day", y: 1993},
+            {q: "Alright, alright, alright.", s: "David Wooderson - Dazed and Confused", y: 1993},
+            {q: "Yeah, well, you know, that's just, like, your opinion, man.", s: "The Dude - The Big Lebowski", y: 1998},
+            {q: "Welcome to Earth.", s: "Capt. Steven Hiller - Independence Day", y: 1996},
+            {q: "There is no spoon.", s: "Spoon Boy - The Matrix", y: 1999},
+            {q: "The first rule of Fight Club is: You do not talk about Fight Club.", s: "Tyler Durden - Fight Club", y: 1999},
+            {q: "I see dead people.", s: "Cole Sear - The Sixth Sense", y: 1999},
+            {q: "Show me the money!", s: "Rod Tidwell - Jerry Maguire", y: 1996},
+            {q: "Do you understand the words that are coming out of my mouth?", s: "Detective Carter - Rush Hour", y: 1998},
+            {q: "I'm just a girl, standing in front of a boy, asking him to love her.", s: "Anna Scott - Notting Hill", y: 1999},
+            {q: "Keep the change, ya filthy animal.", s: "Gangster on TV - Home Alone", y: 1990},
+            {q: "You are a sad, strange little man.", s: "Buzz Lightyear - Toy Story", y: 1995},
+            {q: "Life was like a box of chocolates. You never know what you're gonna get.", s: "Forrest Gump", y: 1994},
+            {q: "I'm in a glass case of emotion!", s: "Ron Burgundy - Anchorman", y: 2004},
+            {q: "Get in loser, we're going shopping.", s: "Regina George - Mean Girls", y: 2004},
+            {q: "What, like it's hard?", s: "Elle Woods - Legally Blonde", y: 2001},
+            {q: "I am McLovin.", s: "Fogell - Superbad", y: 2007},
+            {q: "What is this? A center for ants?!", s: "Derek Zoolander", y: 2001},
+            {q: "You sit on a throne of lies!", s: "Buddy - Elf", y: 2003},
+            {q: "Gosh, idiot!", s: "Napoleon Dynamite", y: 2004},
+            {q: "You're my boy, Blue!", s: "Frank Ricard - Old School", y: 2003},
+            {q: "Ma! The meatloaf! Fuck!", s: "Chazz Reinhold - Wedding Crashers", y: 2005},
+            {q: "Great success!", s: "Borat", y: 2006},
+            {q: "Ogres are like onions.", s: "Shrek", y: 2001},
+            {q: "You've got red on you.", s: "Shaun - Shaun of the Dead", y: 2004},
+            {q: "The greater good.", s: "Sandford Town Council - Hot Fuzz", y: 2007},
+            {q: "You either die a hero, or you live long enough to see yourself become the villain.", s: "Harvey Dent - The Dark Knight", y: 2008},
+            {q: "I will find you, and I will kill you.", s: "Bryan Mills - Taken", y: 2008},
+            {q: "Are you not entertained?!", s: "Maximus - Gladiator", y: 2000},
+            {q: "I drink your milkshake! I drink it up!", s: "Daniel Plainview - There Will Be Blood", y: 2007},
+            {q: "This is Sparta!", s: "King Leonidas - 300", y: 2006},
+            {q: "Just keep swimming.", s: "Dory - Finding Nemo", y: 2003},
+            {q: "I wish I knew how to quit you.", s: "Jack Twist - Brokeback Mountain", y: 2005},
+            {q: "These pretzels are making me thirsty!", s: "Cosmo Kramer - Seinfeld", y: 1991},
+            {q: "No soup for you!", s: "The Soup Nazi - Seinfeld", y: 1995},
+            {q: "He's her lobster!", s: "Phoebe Buffay - Friends", y: 1996},
+            {q: "Pivot!", s: "Ross Geller - Friends", y: 1999},
+            {q: "The truth is out there.", s: "Tagline - The X-Files", y: 1993},
+            {q: "Eat my shorts.", s: "Bart Simpson - The Simpsons", y: 1990},
+            {q: "Respect my authoritah!", s: "Eric Cartman - South Park", y: 1998},
+            {q: "Good news, everyone!", s: "Professor Farnsworth - Futurama", y: 1999},
+            {q: "Bears, Beets, Battlestar Galactica.", s: "Jim Halpert - The Office", y: 2007},
+            {q: "That's what she said.", s: "Michael Scott - The Office", y: 2005},
+            {q: "I've made a huge mistake.", s: "Gob Bluth - Arrested Development", y: 2003},
+            {q: "Legen—wait for it—dary!", s: "Barney Stinson - How I Met Your Mother", y: 2005},
+            {q: "Clear eyes, full hearts, can't lose.", s: "Coach Taylor - Friday Night Lights", y: 2006},
+            {q: "Omar comin'!", s: "Street Kids - The Wire", y: 2002},
+            {q: "Bazinga!", s: "Sheldon Cooper - The Big Bang Theory", y: 2008},
+            {q: "I know what I'm about, son.", s: "Ron Swanson - Parks and Recreation", y: 2009},
+            {q: "I'm Rick James, bitch!", s: "Dave Chappelle - Chappelle's Show", y: 2004},
+            {q: "Winter is coming.", s: "Ned Stark - Game of Thrones", y: 2011},
+            {q: "I am the one who knocks!", s: "Walter White - Breaking Bad", y: 2011},
+            {q: "May the Force be with you.", s: "Han Solo / General - Star Wars", y: 1977},
+            {q: "I'll be back.", s: "The Terminator", y: 1984},
+            {q: "You're gonna need a bigger boat.", s: "Chief Brody - Jaws", y: 1975},
+            {q: "Here's Johnny!", s: "Jack Torrance - The Shining", y: 1980},
+            {q: "E.T. phone home.", s: "E.T. the Extra-Terrestrial", y: 1982},
+            {q: "Roads? Where we're going we don't need roads.", s: "Doc Brown - Back to the Future", y: 1985},
+            {q: "Yippee-ki-yay, motherf***er.", s: "John McClane - Die Hard", y: 1988},
+            {q: "Frankly, my dear, I don't give a damn.", s: "Rhett Butler - Gone with the Wind", y: 1939},
+            {q: "Toto, I've a feeling we're not in Kansas anymore.", s: "Dorothy Gale - The Wizard of Oz", y: 1939},
+            {q: "Rosebud.", s: "Charles Foster Kane - Citizen Kane", y: 1941}
         ];
 
-        // Format to array of objects
-        const quotes = rawQuotes.map(item => ({ q: item[0], s: item[1], y: item[2] }));
+        const showScreen = (id) => {
+            ['auth-screen', 'menu-screen', 'lobby-screen', 'game-screen', 'feedback-screen', 'win-screen']
+                .forEach(s => document.getElementById(s).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        };
 
-        // --- GAME LOGIC ---
-        let currentTeam = 1;
-        let t1Name = "Team 1";
-        let t2Name = "Team 2";
-        let t1Score = 0; let t2Score = 0;
-        let t1Correct = 0; let t2Correct = 0;
-        let usedQuestions = [];
-        let currentQ = null;
+        const showError = (msg) => {
+            const errEl = document.getElementById('menu-error');
+            errEl.innerText = msg;
+            errEl.classList.remove('hidden');
+            setTimeout(() => errEl.classList.add('hidden'), 4000);
+        };
 
-        function startGame() {
-            t1Name = document.getElementById('t1-name').value || "Team 1";
-            t2Name = document.getElementById('t2-name').value || "Team 2";
-            
-            document.getElementById('t1-name-display').innerText = t1Name;
-            document.getElementById('t2-name-display').innerText = t2Name;
-            
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            
-            // Initial Shuffle
-            usedQuestions = [...quotes].sort(() => 0.5 - Math.random());
-            
-            renderGame();
-        }
-
-        function updateScoreboards() {
-            document.getElementById('t1-score').innerText = t1Score;
-            document.getElementById('t2-score').innerText = t2Score;
-            
-            // Render 5 Dots
-            const getDots = (correct) => Array(5).fill(0).map((_, i) => 
-                `<div class="w-4 h-4 rounded-full ${i < correct ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-gray-700/50 border border-gray-600'}"></div>`
-            ).join('');
-            
-            const getDotsT2 = (correct) => Array(5).fill(0).map((_, i) => 
-                `<div class="w-4 h-4 rounded-full ${i < correct ? 'bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.8)]' : 'bg-gray-700/50 border border-gray-600'}"></div>`
-            ).join('');
-
-            document.getElementById('t1-dots').innerHTML = getDots(t1Correct);
-            document.getElementById('t2-dots').innerHTML = getDotsT2(t2Correct);
-
-            // Highlight Active Team
-            const b1 = document.getElementById('team-1-board');
-            const b2 = document.getElementById('team-2-board');
-            const badge = document.getElementById('current-turn-badge');
-            
-            if(currentTeam === 1) {
-                b1.className = "flex justify-between items-center bg-gray-800 rounded-2xl p-5 shadow-lg border-2 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300 transform scale-[1.02]";
-                b2.className = "flex justify-between items-center bg-gray-800/50 rounded-2xl p-5 border-2 border-transparent transition-all duration-300 opacity-60";
-                badge.innerText = `${t1Name}'s Turn`;
-                badge.className = "px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest bg-cyan-500 text-slate-900 shadow-cyan-500/50";
-            } else {
-                b2.className = "flex justify-between items-center bg-gray-800 rounded-2xl p-5 shadow-lg border-2 border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 transform scale-[1.02]";
-                b1.className = "flex justify-between items-center bg-gray-800/50 rounded-2xl p-5 border-2 border-transparent transition-all duration-300 opacity-60";
-                badge.innerText = `${t2Name}'s Turn`;
-                badge.className = "px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest bg-purple-500 text-white shadow-purple-500/50";
+        // Init Auth Sequence
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUser = auth.currentUser;
+                
+                // Read local storage for name preference (allowed for convenience, game state is firestore)
+                const savedName = localStorage.getItem('cqyot_name');
+                if(savedName) {
+                    document.getElementById('player-name').value = savedName;
+                }
+                
+                showScreen('menu-screen');
+            } catch (error) {
+                console.error("Auth Error:", error);
+                document.getElementById('auth-screen').innerHTML = `<p class="text-red-500 font-bold">Authentication failed. Refresh to retry.</p>`;
             }
         }
 
-        function renderGame() {
-            document.getElementById('source-input').value = "";
-            document.getElementById('year-input').value = "";
-            updateScoreboards();
-            
-            if(usedQuestions.length === 0) {
-                usedQuestions = [...quotes].sort(() => 0.5 - Math.random());
+        // Generate Random 4-letter Code
+        const genCode = () => {
+            let c = '';
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            for(let i=0; i<4; i++) c += chars.charAt(Math.floor(Math.random() * chars.length));
+            return c;
+        };
+
+        const getRandomQuote = (usedArray) => {
+            let available = quotesDB.filter((_, i) => !usedArray.includes(i));
+            if(available.length === 0) {
+                usedArray.length = 0; // Reset if all used
+                available = quotesDB;
             }
-            
-            currentQ = usedQuestions.pop();
-            document.getElementById('quote-text').innerText = currentQ.q;
-            document.getElementById('source-input').focus();
-        }
+            const randIndex = Math.floor(Math.random() * available.length);
+            const originalIndex = quotesDB.indexOf(available[randIndex]);
+            return { quote: available[randIndex], index: originalIndex };
+        };
 
-        function isSourceMatch(userInput, actualSource) {
-            if(!userInput) return false;
-            let cleanIn = userInput.toLowerCase().replace(/[^a-z0-9]/g, '');
-            let cleanAct = actualSource.toLowerCase().replace(/[^a-z0-9]/g, '');
-            if(cleanIn.length < 3) return false;
-            return cleanAct.includes(cleanIn) || cleanIn.includes(cleanAct);
-        }
+        
+        // Expose to window for HTML buttons
+        window.createGame = async () => {
+            if(!currentUser) return;
+            const name = document.getElementById('player-name').value.trim() || "Host";
+            localStorage.setItem('cqyot_name', name);
+            localPlayerName = name;
+            
+            const code = genCode();
+            currentGameCode = code;
+            isHost = true;
 
-        function submitAnswer() {
-            let sInput = document.getElementById('source-input').value;
-            let yInput = parseInt(document.getElementById('year-input').value);
+            const initialData = {
+                phase: 'lobby',
+                host: currentUser.uid,
+                t1Name: "Team 1",
+                t2Name: "Team 2",
+                players: {
+                    [currentUser.uid]: { name: name, team: 1 } // Host defaults to T1
+                },
+                t1Score: 0, t2Score: 0,
+                t1Correct: 0, t2Correct: 0,
+                currentTeam: 1,
+                currentQuote: null,
+                usedIndexes: [],
+                lastPlay: null,
+                winner: null
+            };
+
+            try {
+                await setDoc(getGameRef(code), initialData);
+                attachGameListener(code);
+            } catch(e) {
+                console.error(e);
+                showError("Failed to create game. Check permissions.");
+            }
+        };
+
+        window.joinGame = async () => {
+            if(!currentUser) return;
+            const name = document.getElementById('player-name').value.trim() || "Player";
+            localStorage.setItem('cqyot_name', name);
+            localPlayerName = name;
+
+            const code = document.getElementById('join-code').value.toUpperCase().trim();
+            if(code.length !== 4) return showError("Code must be 4 characters.");
+
+            try {
+                const docSnap = await getDoc(getGameRef(code));
+                if(docSnap.exists()) {
+                    currentGameCode = code;
+                    const data = docSnap.data();
+                    isHost = (data.host === currentUser.uid);
+                    
+                    // Add player to Team 2 by default if joining
+                    const newPlayers = { ...data.players };
+                    newPlayers[currentUser.uid] = { name: name, team: isHost ? 1 : 2 };
+                    
+                    await updateDoc(getGameRef(code), { players: newPlayers });
+                    attachGameListener(code);
+                } else {
+                    showError("Game not found.");
+                }
+            } catch(e) {
+                console.error(e);
+                showError("Error joining game.");
+            }
+        };
+
+        window.joinTeam = async (teamNum) => {
+            if(!currentUser || !currentGameCode) return;
+            try {
+                const docSnap = await getDoc(getGameRef(currentGameCode));
+                if(docSnap.exists()) {
+                    const data = docSnap.data();
+                    const newPlayers = { ...data.players };
+                    newPlayers[currentUser.uid] = { name: localPlayerName, team: teamNum };
+                    await updateDoc(getGameRef(currentGameCode), { players: newPlayers });
+                }
+            } catch(e) { console.error(e); }
+        };
+
+        window.updateTeamName = async (teamNum, newName) => {
+            if(!isHost || !currentGameCode) return;
+            const field = teamNum === 1 ? 't1Name' : 't2Name';
+            await updateDoc(getGameRef(currentGameCode), { [field]: newName });
+        };
+
+        
+        window.startMatch = async () => {
+            if(!isHost || !currentGameCode) return;
+            try {
+                const docSnap = await getDoc(getGameRef(currentGameCode));
+                const data = docSnap.data();
+                const qData = getRandomQuote(data.usedIndexes || []);
+                
+                await updateDoc(getGameRef(currentGameCode), {
+                    phase: 'playing',
+                    currentQuote: qData.quote,
+                    usedIndexes: [...(data.usedIndexes || []), qData.index],
+                    currentTeam: 1, // T1 always starts
+                    t1Score: 0, t2Score: 0, t1Correct: 0, t2Correct: 0,
+                    winner: null
+                });
+            } catch(e) { console.error(e); }
+        };
+
+        window.submitTurn = async () => {
+            if(!currentUser || !currentGameCode) return;
             
-            let sourceCorrect = isSourceMatch(sInput, currentQ.s);
-            let yearExact = yInput === currentQ.y;
-            let yearDecade = !yearExact && !isNaN(yInput) && Math.abs(yInput - currentQ.y) <= 10;
+            const docSnap = await getDoc(getGameRef(currentGameCode));
+            if(!docSnap.exists()) return;
+            const data = docSnap.data();
             
+            const myPlayer = data.players[currentUser.uid];
+            if(!myPlayer || myPlayer.team !== data.currentTeam || data.phase !== 'playing') return;
+
+            const sInput = document.getElementById('source-input').value;
+            const yInput = parseInt(document.getElementById('year-input').value);
+            
+            processSubmission(sInput, yInput, data, myPlayer.name);
+        };
+
+        window.skipTurn = async () => {
+            if(!currentUser || !currentGameCode) return;
+            const docSnap = await getDoc(getGameRef(currentGameCode));
+            if(!docSnap.exists()) return;
+            const data = docSnap.data();
+            
+            const myPlayer = data.players[currentUser.uid];
+            if(!myPlayer || myPlayer.team !== data.currentTeam || data.phase !== 'playing') return;
+
+            processSubmission("", NaN, data, myPlayer.name, true);
+        };
+
+        const processSubmission = async (sInput, yInput, data, playerName, isSkip = false) => {
             let pts = 0;
-            if(sourceCorrect) pts += 1;
-            if(yearExact) pts += 2;
-            else if(yearDecade) pts += 1;
-            
-            if(currentTeam === 1) {
-                t1Score += pts;
-                if(sourceCorrect) t1Correct++;
-            } else {
-                t2Score += pts;
-                if(sourceCorrect) t2Correct++;
+            let sourceCorrect = false;
+            let yearExact = false;
+            let yearDecade = false;
+
+            if(!isSkip) {
+                // Evaluate
+                const cleanIn = sInput.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cleanAct = data.currentQuote.s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if(cleanIn.length >= 3 && (cleanAct.includes(cleanIn) || cleanIn.includes(cleanAct))) {
+                    sourceCorrect = true;
+                }
+                
+                yearExact = yInput === data.currentQuote.y;
+                yearDecade = !yearExact && !isNaN(yInput) && Math.abs(yInput - data.currentQuote.y) <= 10;
+                
+                if(sourceCorrect) pts += 1;
+                if(yearExact) pts += 2;
+                else if(yearDecade) pts += 1;
             }
-            
-            showFeedback(sourceCorrect, yearExact, yearDecade, pts);
-        }
 
-        function skipAnswer() {
-            showFeedback(false, false, false, 0);
-        }
-
-        function showFeedback(sourceCorrect, yearExact, yearDecade, pts) {
-            document.getElementById('game-screen').classList.add('hidden');
-            const fScreen = document.getElementById('feedback-screen');
-            fScreen.classList.remove('hidden');
+            const isT1 = data.currentTeam === 1;
+            const updates = {
+                phase: 'feedback',
+                lastPlay: { sourceCorrect, yearExact, yearDecade, pts, skipped: isSkip, playerName }
+            };
             
-            // Trigger animation reflow
-            fScreen.classList.remove('slide-up');
-            void fScreen.offsetWidth;
-            fScreen.classList.add('slide-up');
-            
-            const statusEl = document.getElementById('feedback-status');
-            if(sourceCorrect && yearExact) {
-                statusEl.innerText = "FLAWLESS!";
-                statusEl.className = "text-5xl md:text-7xl font-black text-yellow-400 mb-4 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]";
-            } else if (sourceCorrect) {
-                statusEl.innerText = "SOURCE IDENTIFIED!";
-                statusEl.className = "text-5xl md:text-7xl font-black text-green-400 mb-4 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(74,222,128,0.6)]";
+            if(isT1) {
+                updates.t1Score = data.t1Score + pts;
+                if(sourceCorrect) updates.t1Correct = data.t1Correct + 1;
             } else {
-                statusEl.innerText = "INCORRECT";
-                statusEl.className = "text-5xl md:text-7xl font-black text-red-500 mb-4 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]";
+                updates.t2Score = data.t2Score + pts;
+                if(sourceCorrect) updates.t2Correct = data.t2Correct + 1;
             }
+
+            // Check Win Condition
+            const updatedT1C = updates.t1Correct !== undefined ? updates.t1Correct : data.t1Correct;
+            const updatedT2C = updates.t2Correct !== undefined ? updates.t2Correct : data.t2Correct;
             
-            document.getElementById('fb-correct-quote').innerText = `"${currentQ.q}"`;
-            document.getElementById('fb-correct-source').innerText = `${currentQ.s} (${currentQ.y})`;
+            if(updatedT1C >= 5) updates.winner = 1;
+            if(updatedT2C >= 5) updates.winner = 2;
+
+            await updateDoc(getGameRef(currentGameCode), updates);
+        };
+
+        window.triggerNextTurn = async () => {
+            if(!isHost || !currentGameCode) return;
+            const docSnap = await getDoc(getGameRef(currentGameCode));
+            const data = docSnap.data();
             
-            let pText = [];
-            if(sourceCorrect) pText.push("+1 Pt (Source Match)");
-            if(yearExact) pText.push("+2 Pts (Exact Year)");
-            else if(yearDecade) pText.push("+1 Pt (Close Year)");
-            else if(sourceCorrect) pText.push("+0 Pts (Year Miss)");
+            if(data.winner) {
+                await updateDoc(getGameRef(currentGameCode), { phase: 'win' });
+                return;
+            }
+
+            const qData = getRandomQuote(data.usedIndexes || []);
+            await updateDoc(getGameRef(currentGameCode), {
+                phase: 'playing',
+                currentQuote: qData.quote,
+                usedIndexes: [...(data.usedIndexes || []), qData.index],
+                currentTeam: data.currentTeam === 1 ? 2 : 1
+            });
+        };
+
+        window.resetToLobby = async () => {
+            if(!isHost || !currentGameCode) return;
+            await updateDoc(getGameRef(currentGameCode), {
+                phase: 'lobby',
+                t1Score: 0, t2Score: 0, t1Correct: 0, t2Correct: 0, winner: null
+            });
+        };
+
+        
+        function attachGameListener(code) {
+            if(unsubscribe) unsubscribe();
             
-            if(pts === 0) pText = ["0 Points Earned"];
-            document.getElementById('fb-points').innerText = pText.join("  •  ");
+            unsubscribe = onSnapshot(getGameRef(code), (doc) => {
+                if(doc.exists()) {
+                    syncUI(doc.data());
+                } else {
+                    showError("Game was closed.");
+                    showScreen('menu-screen');
+                    if(unsubscribe) unsubscribe();
+                }
+            }, (error) => {
+                console.error("Snapshot error:", error);
+            });
+        }
+
+        function syncUI(data) {
+            const myPlayer = data.players[currentUser.uid] || { team: 0 };
             
-            updateScoreboards(); // Visual update before checking win
+            // Common Syncs
+            updateScoreboardsUI(data);
+
+            if(data.phase === 'lobby') {
+                showScreen('lobby-screen');
+                document.getElementById('lobby-code').innerText = currentGameCode;
+                
+                // Inputs vs Text based on Host
+                document.getElementById('lobby-t1-name').readOnly = !isHost;
+                document.getElementById('lobby-t2-name').readOnly = !isHost;
+                document.getElementById('lobby-t1-name').value = data.t1Name;
+                document.getElementById('lobby-t2-name').value = data.t2Name;
+                
+                // Populate Players
+                let t1html = '', t2html = '', t1c = 0, t2c = 0;
+                Object.values(data.players).forEach(p => {
+                    const badge = `<div class="bg-gray-800 rounded px-3 py-2 text-sm font-medium border border-gray-700">${p.name}</div>`;
+                    if(p.team === 1) { t1html += badge; t1c++; }
+                    if(p.team === 2) { t2html += badge; t2c++; }
+                });
+                document.getElementById('t1-players').innerHTML = t1html;
+                document.getElementById('t2-players').innerHTML = t2html;
+                document.getElementById('t1-count').innerText = `${t1c} Player${t1c!==1?'s':''}`;
+                document.getElementById('t2-count').innerText = `${t2c} Player${t2c!==1?'s':''}`;
+                
+                if(isHost) {
+                    document.getElementById('btn-start-match').classList.remove('hidden');
+                    document.getElementById('waiting-host-msg').classList.add('hidden');
+                } else {
+                    document.getElementById('btn-start-match').classList.add('hidden');
+                    document.getElementById('waiting-host-msg').classList.remove('hidden');
+                }
+            } 
+            else if(data.phase === 'playing') {
+                showScreen('game-screen');
+                document.getElementById('game-quote-text').innerText = data.currentQuote.q;
+                
+                // Clear inputs
+                document.getElementById('source-input').value = "";
+                document.getElementById('year-input').value = "";
+                
+                if(myPlayer.team === data.currentTeam) {
+                    document.getElementById('active-play-area').classList.remove('hidden');
+                    document.getElementById('waiting-play-area').classList.add('hidden');
+                    // auto focus
+                    setTimeout(() => document.getElementById('source-input').focus(), 100);
+                } else {
+                    document.getElementById('active-play-area').classList.add('hidden');
+                    document.getElementById('waiting-play-area').classList.remove('hidden');
+                    const tName = data.currentTeam === 1 ? data.t1Name : data.t2Name;
+                    document.getElementById('waiting-turn-text').innerText = `Waiting for ${tName}...`;
+                }
+            }
+            else if(data.phase === 'feedback') {
+                showScreen('feedback-screen');
+                
+                const lp = data.lastPlay;
+                const statusEl = document.getElementById('fb-status-title');
+                const cardEl = document.getElementById('fb-card');
+                
+                if(lp.skipped) {
+                    statusEl.innerText = "SKIPPED";
+                    statusEl.className = "text-5xl md:text-7xl font-black text-gray-500 mb-2 uppercase tracking-tight";
+                    cardEl.className = "glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4 border-gray-600";
+                } else if(lp.sourceCorrect && lp.yearExact) {
+                    statusEl.innerText = "FLAWLESS!";
+                    statusEl.className = "text-5xl md:text-7xl font-black text-yellow-400 mb-2 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]";
+                    cardEl.className = "glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4 border-yellow-400";
+                } else if (lp.sourceCorrect) {
+                    statusEl.innerText = "IDENTIFIED!";
+                    statusEl.className = "text-5xl md:text-7xl font-black text-green-400 mb-2 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(74,222,128,0.6)]";
+                    cardEl.className = "glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4 border-green-400";
+                } else {
+                    statusEl.innerText = "INCORRECT";
+                    statusEl.className = "text-5xl md:text-7xl font-black text-red-500 mb-2 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]";
+                    cardEl.className = "glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4 border-red-500";
+                }
+                
+                document.getElementById('fb-action-desc').innerText = `Answered by ${lp.playerName}`;
+                document.getElementById('fb-actual-quote').innerText = `"${data.currentQuote.q}"`;
+                document.getElementById('fb-actual-source').innerText = data.currentQuote.s;
+                document.getElementById('fb-actual-year').innerText = `Year: ${data.currentQuote.y}`;
+                document.getElementById('fb-points-earned').innerText = `+${lp.pts} Points Earned`;
+                
+                if(isHost) {
+                    document.getElementById('btn-next-turn').classList.remove('hidden');
+                    document.getElementById('btn-next-turn').innerText = data.winner ? "View Winner 🏆" : "Next Turn ➔";
+                    document.getElementById('fb-waiting-host').classList.add('hidden');
+                } else {
+                    document.getElementById('btn-next-turn').classList.add('hidden');
+                    document.getElementById('fb-waiting-host').classList.remove('hidden');
+                }
+            }
+            else if(data.phase === 'win') {
+                showScreen('win-screen');
+                const winName = data.winner === 1 ? data.t1Name : data.t2Name;
+                document.getElementById('win-title').innerText = `${winName} Wins!`;
+                
+                document.getElementById('win-name-t1').innerText = data.t1Name;
+                document.getElementById('win-score-t1').innerHTML = `${data.t1Score} <span class="text-xl text-gray-400">pts</span>`;
+                document.getElementById('win-correct-t1').innerText = data.t1Correct;
+                
+                document.getElementById('win-name-t2').innerText = data.t2Name;
+                document.getElementById('win-score-t2').innerHTML = `${data.t2Score} <span class="text-xl text-gray-400">pts</span>`;
+                document.getElementById('win-correct-t2').innerText = data.t2Correct;
+                
+                if(isHost) {
+                    document.getElementById('win-host-controls').classList.remove('hidden');
+                    document.getElementById('win-waiting-msg').classList.add('hidden');
+                } else {
+                    document.getElementById('win-host-controls').classList.add('hidden');
+                    document.getElementById('win-waiting-msg').classList.remove('hidden');
+                }
+            }
+        }
+
+        function updateScoreboardsUI(data) {
+            // Update names and scores
+            ['game-t1-name', 'game-t1-score', 'game-t2-name', 'game-t2-score'].forEach(id => {
+                const el = document.getElementById(id);
+                if(id.includes('t1-name')) el.innerText = data.t1Name;
+                if(id.includes('t2-name')) el.innerText = data.t2Name;
+                if(id.includes('t1-score')) el.innerText = data.t1Score;
+                if(id.includes('t2-score')) el.innerText = data.t2Score;
+            });
+
+            // Dots generator
+            const getDots = (correct, colorClass, glowClass) => Array(5).fill(0).map((_, i) => 
+                `<div class="w-3 h-3 md:w-4 md:h-4 rounded-full ${i < correct ? `${colorClass} ${glowClass}` : 'bg-gray-700 border border-gray-600'}"></div>`
+            ).join('');
             
-            const nextBtn = document.getElementById('fb-next-btn');
-            if(t1Correct >= 5 || t2Correct >= 5) {
-                nextBtn.innerText = "View Winner 🏆";
-                nextBtn.onclick = showWinScreen;
-                nextBtn.className = "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-black py-5 px-16 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.6)] transition-transform hover:scale-105 active:scale-95 text-xl uppercase tracking-widest mt-6";
+            document.getElementById('game-t1-dots').innerHTML = getDots(data.t1Correct, 'bg-cyan-400', 'shadow-[0_0_8px_rgba(34,211,238,0.8)]');
+            document.getElementById('game-t2-dots').innerHTML = getDots(data.t2Correct, 'bg-purple-400', 'shadow-[0_0_8px_rgba(192,132,252,0.8)]');
+
+            // Turn Highlighting
+            const b1 = document.getElementById('board-t1');
+            const b2 = document.getElementById('board-t2');
+            const badge = document.getElementById('turn-badge');
+            
+            if(data.currentTeam === 1) {
+                b1.className = "flex justify-between items-center glass-panel rounded-2xl p-4 md:p-5 shadow-lg border-2 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.2)] transition-all duration-300 transform scale-[1.02] bg-gray-800/80";
+                b2.className = "flex justify-between items-center glass-panel rounded-2xl p-4 md:p-5 border-2 border-transparent transition-all duration-300 opacity-60";
+                badge.innerText = `${data.t1Name}'s Turn`;
+                badge.className = "px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest bg-cyan-500 text-slate-900 shadow-cyan-500/50 inline-block";
             } else {
-                nextBtn.innerText = "Next Turn ➔";
-                nextBtn.onclick = nextTurn;
-                nextBtn.className = "bg-cyan-600 hover:bg-cyan-500 text-white font-black py-5 px-16 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-transform hover:scale-105 active:scale-95 text-xl uppercase tracking-widest mt-6";
+                b2.className = "flex justify-between items-center glass-panel rounded-2xl p-4 md:p-5 shadow-lg border-2 border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.2)] transition-all duration-300 transform scale-[1.02] bg-gray-800/80";
+                b1.className = "flex justify-between items-center glass-panel rounded-2xl p-4 md:p-5 border-2 border-transparent transition-all duration-300 opacity-60";
+                badge.innerText = `${data.t2Name}'s Turn`;
+                badge.className = "px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest bg-purple-500 text-white shadow-purple-500/50 inline-block";
             }
-        }
-
-        function nextTurn() {
-            document.getElementById('feedback-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            currentTeam = currentTeam === 1 ? 2 : 1;
-            renderGame();
-        }
-
-        function showWinScreen() {
-            document.getElementById('feedback-screen').classList.add('hidden');
-            const wScreen = document.getElementById('win-screen');
-            wScreen.classList.remove('hidden');
-            wScreen.classList.add('slide-up');
-            
-            let winnerName = t1Correct >= 5 ? t1Name : t2Name;
-            document.getElementById('winner-name').innerText = `${winnerName} Wins!`;
-            
-            document.getElementById('win-t1-name').innerText = t1Name;
-            document.getElementById('win-t1-score').innerHTML = `${t1Score} <span class="text-2xl text-gray-400">pts</span>`;
-            document.getElementById('win-t1-correct').innerText = `${t1Correct}/5 Quotes Won`;
-            
-            document.getElementById('win-t2-name').innerText = t2Name;
-            document.getElementById('win-t2-score').innerHTML = `${t2Score} <span class="text-2xl text-gray-400">pts</span>`;
-            document.getElementById('win-t2-correct').innerText = `${t2Correct}/5 Quotes Won`;
         }
 
         // Enter key bindings
-        document.getElementById('source-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitAnswer(); });
-        document.getElementById('year-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitAnswer(); });
+        document.getElementById('source-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitTurn(); });
+        document.getElementById('year-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitTurn(); });
+        document.getElementById('join-code').addEventListener('keypress', e => { if (e.key === 'Enter') joinGame(); });
+
+        // Run Auth Sequence on load
+        window.onload = initAuth;
 
     </script>
 </body>
