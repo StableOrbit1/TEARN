@@ -26,6 +26,69 @@
 
     <div class="flex-grow flex flex-col max-w-5xl w-full mx-auto p-4 md:p-8 relative z-10">
 
+        <!-- WELCOME / INSTRUCTIONS SCREEN -->
+        <div id="welcome-screen" class="hidden flex-col h-full items-center justify-start md:justify-center fade-in pt-4 md:pt-8 pb-10 overflow-y-auto">
+            <div class="mb-6 text-center shrink-0 mt-4 md:mt-0">
+                <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 tracking-tight drop-shadow-lg">Can I Quote You On That?</h1>
+                <p class="text-xl text-gray-300 font-medium">The Ultimate Pop Culture Trivia Battle</p>
+            </div>
+            
+            <div class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-4xl border-t-4 border-cyan-500 relative overflow-hidden shrink-0">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-bl-full -z-10 pointer-events-none"></div>
+                
+                <h2 class="text-2xl md:text-3xl font-black text-white mb-6 uppercase tracking-wider text-center border-b border-gray-700 pb-4">Commander's Briefing: How to Play</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-gray-300">
+                    
+                    <!-- Left Column -->
+                    <div class="space-y-4 md:space-y-6">
+                        <div class="flex items-start gap-4 bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50">
+                            <div class="bg-cyan-900/50 p-3 rounded-xl text-cyan-400 text-xl md:text-2xl shadow-inner border border-cyan-700/50 shrink-0">⚔️</div>
+                            <div>
+                                <h3 class="text-lg md:text-xl font-bold text-cyan-400 mb-1">Team Versus Mode</h3>
+                                <p class="text-sm leading-relaxed">Gather your friends and split into two teams. One person clicks <strong>"Host New Game"</strong> and shares the 4-letter room code. Everyone else clicks <strong>"Join"</strong> and picks a team in the lobby.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4 bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50">
+                            <div class="bg-purple-900/50 p-3 rounded-xl text-purple-400 text-xl md:text-2xl shadow-inner border border-purple-700/50 shrink-0">⏱️</div>
+                            <div>
+                                <h3 class="text-lg md:text-xl font-bold text-purple-400 mb-1">Beat the 20s Clock</h3>
+                                <p class="text-sm leading-relaxed">When it's your team's turn, you have exactly <strong class="text-white">20 seconds</strong> to discuss and type your answer. If time runs out, the turn is automatically skipped and you forfeit the points!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-4 md:space-y-6">
+                        <div class="flex items-start gap-4 bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50">
+                            <div class="bg-yellow-900/50 p-3 rounded-xl text-yellow-400 text-xl md:text-2xl shadow-inner border border-yellow-700/50 shrink-0">🎯</div>
+                            <div>
+                                <h3 class="text-lg md:text-xl font-bold text-yellow-400 mb-1">Forgiving Scoring</h3>
+                                <ul class="list-disc list-inside space-y-1 mt-2 text-sm">
+                                    <li><strong class="text-white">Identify Source (+1 Pt):</strong> Name the Character, Actor, TV Show, or Movie. <em class="text-gray-400">Ex: "Arnold", "Terminator", or "T800" all work!</em></li>
+                                    <li><strong class="text-white">Exact Year (+2 Pts):</strong> Nail the release year exactly.</li>
+                                    <li><strong class="text-white">Close Year (+1 Pt):</strong> Get within a decade (10 years) of the release.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-4 bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50">
+                            <div class="bg-green-900/50 p-3 rounded-xl text-green-400 text-xl md:text-2xl shadow-inner border border-green-700/50 shrink-0">🏆</div>
+                            <div>
+                                <h3 class="text-lg md:text-xl font-bold text-green-400 mb-1">Race to 5</h3>
+                                <p class="text-sm leading-relaxed">It's a race! The first team to correctly identify the source of <strong class="text-white">5 distinct quotes</strong> wins the match. Partial points for years help your score, but won't trigger a win.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-center">
+                    <button onclick="showScreen('menu-screen')" class="w-full md:w-2/3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-transform hover:scale-[1.02] active:scale-95 text-xl uppercase tracking-wider">I'm Ready to Play</button>
+                </div>
+            </div>
+        </div>
+
         <!-- AUTH/LOADING SCREEN -->
         <div id="auth-screen" class="flex flex-col h-[80vh] items-center justify-center fade-in">
             <div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -532,7 +595,7 @@
         const quotesDB = rawQuotes.map(item => ({ q: item[0], s: item[1], y: item[2] }));
 
         const showScreen = (id) => {
-            ['auth-screen', 'menu-screen', 'lobby-screen', 'game-screen', 'feedback-screen', 'win-screen']
+            ['welcome-screen', 'auth-screen', 'menu-screen', 'lobby-screen', 'game-screen', 'feedback-screen', 'win-screen']
                 .forEach(s => document.getElementById(s).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         };
@@ -557,7 +620,7 @@
                 if(savedName) {
                     document.getElementById('player-name').value = savedName;
                 }
-                showScreen('menu-screen');
+                showScreen('welcome-screen');
             } catch (error) {
                 console.error("Auth Error:", error);
                 document.getElementById('auth-screen').innerHTML = `<p class="text-red-500 font-bold">Authentication failed. Refresh to retry.</p>`;
