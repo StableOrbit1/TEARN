@@ -143,6 +143,12 @@
                 <span class="px-6 py-2 rounded-full text-sm font-black shadow-lg uppercase tracking-widest transition-colors duration-300 inline-block" id="turn-badge">Team's Turn</span>
             </div>
 
+            <!-- Timer UI -->
+            <div class="w-full max-w-3xl mx-auto mb-6 h-4 bg-gray-900 rounded-full overflow-hidden border border-gray-700 relative hidden shadow-inner" id="timer-container">
+                <div id="timer-bar" class="h-full bg-cyan-400 w-full ease-linear transition-all duration-75"></div>
+                <div id="timer-text" class="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow-md z-10 font-mono tracking-widest">20.0s</div>
+            </div>
+
             <!-- Quote Display -->
             <div class="flex-grow flex items-center justify-center min-h-[30vh] mb-8 bg-gray-900/60 rounded-3xl p-6 md:p-10 border border-gray-700/50 shadow-inner relative overflow-hidden">
                 <i class="fa-solid fa-quote-left absolute top-4 left-6 text-6xl text-gray-700/30"></i>
@@ -260,6 +266,8 @@
         let unsubscribe = null;
         let isHost = false;
         let localPlayerName = "";
+        let timerInterval = null;
+        let isTimeUpProcessing = false;
         
         // Mandatory Strict Path generator
         const getGameRef = (code) => doc(db, 'artifacts', appId, 'public', 'data', 'games', code);
@@ -672,13 +680,15 @@
                     usedIndexes: [...(data.usedIndexes || []), qData.index],
                     currentTeam: 1,
                     t1Score: 0, t2Score: 0, t1Correct: 0, t2Correct: 0,
-                    winner: null
+                    winner: null,
+                    turnDeadline: Date.now() + 20500 // 20 seconds + 500ms network buffer
                 });
             } catch(e) { console.error(e); }
         };
 
         window.submitTurn = async () => {
-            if(!currentUser || !currentGameCode) return;
+            if(!currentUser || !currentGameCode || isTimeUpProcessing) return;
+            isTimeUpProcessing = true;
             
             const docSnap = await getDoc(getGameRef(currentGameCode));
             if(!docSnap.exists()) return;
@@ -690,11 +700,12 @@
             const sInput = document.getElementById('source-input').value;
             const yInput = parseInt(document.getElementById('year-input').value);
             
-            processSubmission(sInput, yInput, data, myPlayer.name);
+            processSubmission(sInput, yInput, data, myPlayer.name, false, false);
         };
 
         window.skipTurn = async () => {
-            if(!currentUser || !currentGameCode) return;
+            if(!currentUser || !currentGameCode || isTimeUpProcessing) return;
+            isTimeUpProcessing = true;
             const docSnap = await getDoc(getGameRef(currentGameCode));
             if(!docSnap.exists()) return;
             const data = docSnap.data();
@@ -702,16 +713,16 @@
             const myPlayer = data.players[currentUser.uid];
             if(!myPlayer || myPlayer.team !== data.currentTeam || data.phase !== 'playing') return;
 
-            processSubmission("", NaN, data, myPlayer.name, true);
+            processSubmission("", NaN, data, myPlayer.name, true, false);
         };
 
-        const processSubmission = async (sInput, yInput, data, playerName, isSkip = false) => {
+        const processSubmission = async (sInput, yInput, data, playerName, isSkip = false, isTimeout = false) => {
             let pts = 0;
             let sourceCorrect = false;
             let yearExact = false;
             let yearDecade = false;
 
-            if(!isSkip) {
+            if(!isSkip && !isTimeout) {
                 // Forgiving Matcher
                 const cleanIn = sInput.toLowerCase().replace(/[^a-z0-9]/g, '');
                 const cleanAct = data.currentQuote.s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -730,7 +741,7 @@
             const isT1 = data.currentTeam === 1;
             const updates = {
                 phase: 'feedback',
-                lastPlay: { sourceCorrect, yearExact, yearDecade, pts, skipped: isSkip, playerName }
+                lastPlay: { sourceCorrect, yearExact, yearDecade, pts, skipped: isSkip, timedOut: isTimeout, playerName }
             };
             
             if(isT1) {
@@ -766,7 +777,8 @@
                 phase: 'playing',
                 currentQuote: qData.quote,
                 usedIndexes: [...(data.usedIndexes || []), qData.index],
-                currentTeam: data.currentTeam === 1 ? 2 : 1
+                currentTeam: data.currentTeam === 1 ? 2 : 1,
+                turnDeadline: Date.now() + 20500 // Reset timer for new turn
             });
         };
 
@@ -829,6 +841,8 @@
             } 
             else if(data.phase === 'playing') {
                 showScreen('game-screen');
+                isTimeUpProcessing = false;
+                document.getElementById('timer-container').classList.remove('hidden');
                 document.getElementById('game-quote-text').innerText = data.currentQuote.q;
                 
                 let sStr = data.currentQuote.s || "";
@@ -852,15 +866,56 @@
                     const tName = data.currentTeam === 1 ? data.t1Name : data.t2Name;
                     document.getElementById('waiting-turn-text').innerText = `Waiting for ${tName}...`;
                 }
+
+                // Timer Logic
+                clearInterval(timerInterval);
+                const updateTimer = () => {
+                    const timeLeft = Math.max(0, data.turnDeadline - Date.now());
+                    const percentage = (timeLeft / 20000) * 100;
+                    
+                    const bar = document.getElementById('timer-bar');
+                    const text = document.getElementById('timer-text');
+                    
+                    bar.style.width = `${Math.min(100, percentage)}%`;
+                    text.innerText = (timeLeft / 1000).toFixed(1) + 's';
+                    
+                    if(timeLeft <= 5000) {
+                        bar.classList.remove('bg-cyan-400', 'bg-yellow-400');
+                        bar.classList.add('bg-red-500');
+                    } else if (timeLeft <= 10000) {
+                        bar.classList.remove('bg-cyan-400', 'bg-red-500');
+                        bar.classList.add('bg-yellow-400');
+                    } else {
+                        bar.classList.remove('bg-yellow-400', 'bg-red-500');
+                        bar.classList.add('bg-cyan-400');
+                    }
+                    
+                    // Auto-submit if time runs out
+                    if(timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        if(myPlayer.team === data.currentTeam && !isTimeUpProcessing) {
+                            isTimeUpProcessing = true;
+                            processSubmission("", NaN, data, myPlayer.name, false, true);
+                        }
+                    }
+                };
+                updateTimer(); // Initial call to avoid layout shift
+                timerInterval = setInterval(updateTimer, 50);
             }
             else if(data.phase === 'feedback') {
                 showScreen('feedback-screen');
+                clearInterval(timerInterval);
+                document.getElementById('timer-container').classList.add('hidden');
                 
                 const lp = data.lastPlay;
                 const statusEl = document.getElementById('fb-status-title');
                 const cardEl = document.getElementById('fb-card');
                 
-                if(lp.skipped) {
+                if(lp.timedOut) {
+                    statusEl.innerText = "TIME'S UP";
+                    statusEl.className = "text-5xl md:text-7xl font-black text-red-500 mb-2 uppercase tracking-tight drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]";
+                    cardEl.className = "glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4 border-red-500";
+                } else if(lp.skipped) {
                     statusEl.innerText = "SKIPPED";
                     statusEl.className = "text-5xl md:text-7xl font-black text-gray-500 mb-2 uppercase tracking-tight";
                     cardEl.className = "glass-panel p-8 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full my-4 border-t-4 border-gray-600";
