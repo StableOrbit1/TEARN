@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Can I Quote You On That? - Versus Multiplayer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .slide-up { animation: slideUp 0.4s ease-out forwards; }
@@ -93,6 +94,7 @@
         <div id="auth-screen" class="flex flex-col h-[80vh] items-center justify-center fade-in">
             <div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <h2 class="text-2xl font-bold text-cyan-400 animate-pulse">Connecting to Network...</h2>
+            <p class="text-gray-400 text-sm mt-4 hidden" id="auth-hint">If this is spinning forever, check your Firebase config!</p>
         </div>
 
         <!-- MAIN MENU -->
@@ -594,7 +596,7 @@
         ];
         const quotesDB = rawQuotes.map(item => ({ q: item[0], s: item[1], y: item[2] }));
 
-        const showScreen = (id) => {
+        window.showScreen = (id) => {
             ['welcome-screen', 'auth-screen', 'menu-screen', 'lobby-screen', 'game-screen', 'feedback-screen', 'win-screen']
                 .forEach(s => document.getElementById(s).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
@@ -604,10 +606,12 @@
             const errEl = document.getElementById('menu-error');
             errEl.innerText = msg;
             errEl.classList.remove('hidden');
-            setTimeout(() => errEl.classList.add('hidden'), 4000);
+            setTimeout(() => errEl.classList.add('hidden'), 5000);
         };
 
         async function initAuth() {
+            setTimeout(() => { document.getElementById('auth-hint').classList.remove('hidden'); }, 2500);
+            
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -620,10 +624,16 @@
                 if(savedName) {
                     document.getElementById('player-name').value = savedName;
                 }
-                showScreen('welcome-screen');
+                window.showScreen('welcome-screen');
             } catch (error) {
                 console.error("Auth Error:", error);
-                document.getElementById('auth-screen').innerHTML = `<p class="text-red-500 font-bold">Authentication failed. Refresh to retry.</p>`;
+                document.getElementById('auth-screen').innerHTML = `
+                    <div class="text-center p-8 bg-red-900/30 border border-red-500 rounded-2xl max-w-md">
+                        <p class="text-red-400 font-black text-2xl mb-2">Authentication Failed</p>
+                        <p class="text-gray-300 text-sm">Your game cannot connect to Firebase.</p>
+                        <p class="text-white mt-4 font-bold">Did you enable 'Anonymous' sign-in?</p>
+                        <p class="text-gray-400 text-xs mt-2">Go to Firebase Console ➔ Authentication ➔ Sign-in Method ➔ Enable Anonymous.</p>
+                    </div>`;
             }
         }
 
@@ -646,7 +656,11 @@
         };
 
         window.createGame = async () => {
-            if(!currentUser) return;
+            if(!currentUser) {
+                alert("Error: You are not connected to Firebase. Please check your Authentication settings.");
+                return;
+            }
+            
             const name = document.getElementById('player-name').value.trim() || "Host";
             localStorage.setItem('cqyot_name', name);
             localPlayerName = name;
@@ -676,13 +690,17 @@
                 await setDoc(getGameRef(code), initialData);
                 attachGameListener(code);
             } catch(e) {
-                console.error(e);
-                showError("Failed to create game. Check permissions.");
+                console.error("Firestore Set Error:", e);
+                alert(`FIREBASE PERMISSION ERROR:\n\nFailed to create the game lobby. This is usually because your Firestore Security Rules are blocking access.\n\nError details: ${e.message}`);
+                showError("Failed to create game. Check Firestore permissions.");
             }
         };
 
         window.joinGame = async () => {
-            if(!currentUser) return;
+            if(!currentUser) {
+                alert("Error: You are not connected to Firebase.");
+                return;
+            }
             const name = document.getElementById('player-name').value.trim() || "Player";
             localStorage.setItem('cqyot_name', name);
             localPlayerName = name;
@@ -703,10 +721,12 @@
                     await updateDoc(getGameRef(code), { players: newPlayers });
                     attachGameListener(code);
                 } else {
+                    alert("Room code not found. Make sure the host has started the game.");
                     showError("Game not found.");
                 }
             } catch(e) {
-                console.error(e);
+                console.error("Firestore Join Error:", e);
+                alert(`FIREBASE PERMISSION ERROR:\n\nFailed to join the game. Make sure your Firestore Security Rules allow read/write access.\n\nError details: ${e.message}`);
                 showError("Error joining game.");
             }
         };
@@ -731,9 +751,16 @@
         };
 
         window.startMatch = async () => {
-            if(!isHost || !currentGameCode) return;
+            if(!isHost || !currentGameCode) {
+                alert("Error: Cannot start match. You must be the host.");
+                return;
+            }
             try {
                 const docSnap = await getDoc(getGameRef(currentGameCode));
+                if(!docSnap.exists()) {
+                    alert("Game data not found in Firebase!");
+                    return;
+                }
                 const data = docSnap.data();
                 const qData = getRandomQuote(data.usedIndexes || []);
                 
@@ -746,7 +773,10 @@
                     winner: null,
                     turnDeadline: Date.now() + 20500 // 20 seconds + 500ms network buffer
                 });
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error("Start Match Error:", e); 
+                alert(`Failed to start match: ${e.message}`);
+            }
         };
 
         window.submitTurn = async () => {
@@ -860,12 +890,13 @@
                 if(doc.exists()) {
                     syncUI(doc.data());
                 } else {
-                    showError("Game was closed.");
-                    showScreen('menu-screen');
+                    alert("The host closed the game room.");
+                    window.showScreen('menu-screen');
                     if(unsubscribe) unsubscribe();
                 }
             }, (error) => {
                 console.error("Snapshot error:", error);
+                alert("Disconnected from Firebase: " + error.message);
             });
         }
 
@@ -875,7 +906,7 @@
             updateScoreboardsUI(data);
 
             if(data.phase === 'lobby') {
-                showScreen('lobby-screen');
+                window.showScreen('lobby-screen');
                 document.getElementById('lobby-code').innerText = currentGameCode;
                 
                 document.getElementById('lobby-t1-name').readOnly = !isHost;
@@ -903,7 +934,7 @@
                 }
             } 
             else if(data.phase === 'playing') {
-                showScreen('game-screen');
+                window.showScreen('game-screen');
                 isTimeUpProcessing = false;
                 document.getElementById('timer-container').classList.remove('hidden');
                 document.getElementById('game-quote-text').innerText = data.currentQuote.q;
@@ -966,7 +997,7 @@
                 timerInterval = setInterval(updateTimer, 50);
             }
             else if(data.phase === 'feedback') {
-                showScreen('feedback-screen');
+                window.showScreen('feedback-screen');
                 clearInterval(timerInterval);
                 document.getElementById('timer-container').classList.add('hidden');
                 
@@ -1012,7 +1043,7 @@
                 }
             }
             else if(data.phase === 'win') {
-                showScreen('win-screen');
+                window.showScreen('win-screen');
                 const winName = data.winner === 1 ? data.t1Name : data.t2Name;
                 document.getElementById('win-title').innerText = `${winName} Wins!`;
                 
@@ -1071,9 +1102,9 @@
         }
 
         // Enter key listeners
-        document.getElementById('source-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitTurn(); });
-        document.getElementById('year-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitTurn(); });
-        document.getElementById('join-code').addEventListener('keypress', e => { if (e.key === 'Enter') joinGame(); });
+        document.getElementById('source-input').addEventListener('keypress', e => { if (e.key === 'Enter') window.submitTurn(); });
+        document.getElementById('year-input').addEventListener('keypress', e => { if (e.key === 'Enter') window.submitTurn(); });
+        document.getElementById('join-code').addEventListener('keypress', e => { if (e.key === 'Enter') window.joinGame(); });
 
         window.onload = initAuth;
 
